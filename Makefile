@@ -1,2 +1,2 @@
 start:
-	gcc test.c -I/usr/local/include/flint -L/usr/local/lib/ -lmpfr -lflint -lgmp
+	gcc test.c -I/usr/include/x86_64-linux-gnu/flint -L/usr/lib/x86_64-linux-gnu -lmpfr -lflint -lgmp
