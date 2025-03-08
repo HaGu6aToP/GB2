@@ -17,7 +17,7 @@ buchberger_simple(basis):
 crit(basis, B, i, j):
     f = basis[i]
     g = basis[j]
-    for k in range(len):
+    for k in range(len(B)):
         if k == i or k == j:
             continue
         h = basis[k]
@@ -49,4 +49,4 @@ buchberger(basis):
                     B += (i, t)
 
                 t = t + 1
-        B -= (i, j)
+        B -= (i, j) 

@@ -16,6 +16,21 @@ ulong max(ulong a, ulong b){
     else return b;
 }
 
+gint cmpPair(gconstpointer a, gconstpointer b){
+    Pair *A = (Pair*)a, *B = (Pair*)b;
+    // printf("\n---------------cmpPair---------------\n");
+    // printf("A=(%ld, %ld), B=(%ld, %ld)\n", A->a, A->b, B->a, B->b);
+    // printf("---------------------------------------\n");
+    
+    if (A->a < B->a) return -1;
+    if (A->a > B->a) return 1;
+
+    if (A->b < B->b) return -1;
+    if (A->b > B->b) return 1;
+
+    return 0;
+}
+
 // Наименьшее общее кратное двух мономов
 void LCM(Polynom monom, const Polynom p1, const Polynom p2, const PolynomRing ctx){
     ulong nvars = fq_nmod_mpoly_ctx_nvars(ctx);
@@ -122,7 +137,7 @@ void log_B(GArray* B){
     for (Pair* i = (Pair*)B->data; i < (Pair*)B->data + B->len; i++){
         printf("(%ld, %ld)", i->a, i->b);
     }
-    printf("\n");
+    printf("\n\n");
 }
 
 void log_G(GArray* G, PolynomRing ctx){
@@ -130,6 +145,19 @@ void log_G(GArray* G, PolynomRing ctx){
     for (Polynom* p = (Polynom*)G->data; p < (Polynom*)G->data + G->len; p++){
         fq_nmod_mpoly_print_pretty(*p, NULL, ctx);
         printf("\n");
+    }
+}
+
+int crit(GArray* G, GArray* B, ulong i, ulong j, Polynom f, Polynom g, PolynomRing ctx){
+    ulong k;
+    Polynom h;
+    fq_nmod_mpoly_init(h, ctx);
+
+    for (k = 0; k < B->len; k++){
+        if (k == i || k == j)
+            continue;
+        fq_nmod_mpoly_set(h, g_array_index(G, Polynom, k), ctx);
+
     }
 }
 
@@ -158,6 +186,12 @@ Polynom* buchberger(Polynom* basis, ulong t, PolynomRing ctx){
             g_array_append_val(B, pair);
         }
 
+    log_B(B);
+    Pair ss = {0, 2};
+    int index = -1;
+    int bool = g_array_binary_search(B, &ss, cmpPair, &index);
+    printf("finded (%ld, %ld) index (%d) - %d\n", ss.a, ss.b, bool, index);
+    printf("(%ld, %ld)\n", g_array_index(B, Pair, index).a, g_array_index(B, Pair, index).b);
     log_B(B);
 
     for (i = 0; i < nvars; i++){
