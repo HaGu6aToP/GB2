@@ -122,7 +122,7 @@ int main (void)
     const char* str_p3 = "y*z - y^2*z^3";
 
     fq_nmod_mpoly_set_str_pretty(p1, str_p1, variables, poly_ring_ctx);
-    fq_nmod_mpoly_set_str_pretty(p2, str_p2, variables, poly_ring_ctx);
+    fq_nmod_mpoly_set_str_pretty(p2, str_p2, variables, poly_ring_ctx); 
     fq_nmod_mpoly_set_str_pretty(p3, str_p3, variables, poly_ring_ctx);
 
     printf("Система:\n");

@@ -1,0 +1,52 @@
+buchberger_simple(basis):
+    flag = true
+    
+    while flag:
+        additives = []
+        flag = false
+        for f in basis:
+            for g in (basis - {f}):
+                s = S(f, g) mod basis
+                if s != 0:
+                    additives.append(s)
+                    flag = true
+        basis = basis + additives
+
+
+
+crit(basis, B, i, j):
+    f = basis[i]
+    g = basis[j]
+    for k in range(len):
+        if k == i or k == j:
+            continue
+        h = basis[k]
+        if find(B, (i, k)) == -1 and find(B, (j, k)) == -1 and LCM(LT(f), LT(g)) mod LT(k) == 0:
+            return true
+    return false
+
+
+buchberger(basis):
+    t = len(basis)
+    B = []
+
+    for i in range(t-1):
+        for j in range(i + 1, t):
+            B.append((i, j))
+
+    while len(B) != 0:
+        k = rand(len(B))
+        i, j = B[k]
+        f = basis[i]
+        g = basis[j]
+
+        if LCM(LT(f), LT(g)) != LT(f)LT(g) and not crit(basis, B, i, j):
+            s = S(f. g) mod basis
+            if s != 0:
+                
+                basis += s
+                for i in range(t):
+                    B += (i, t)
+
+                t = t + 1
+        B -= (i, j)
