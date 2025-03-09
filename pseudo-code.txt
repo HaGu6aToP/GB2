@@ -21,7 +21,7 @@ crit(basis, B, i, j):
         if k == i or k == j:
             continue
         h = basis[k]
-        if find(B, (i, k)) == -1 and find(B, (j, k)) == -1 and LCM(LT(f), LT(g)) mod LT(k) == 0:
+        if find(B, (i, k)) == -1 and find(B, (j, k)) == -1 and LCM(LT(f), LT(g)) mod LT(h) == 0:
             return true
     return false
 

@@ -260,6 +260,14 @@ int main (void)
         printf("\n");
     }
 
+    printf("---------cast to fq_nmd_mpoly_t----------n");
+    fq_nmod_mpoly_t* G = (fq_nmod_mpoly_t*)basis->data;
+
+    for (int i = 0; i < basis->len; i++){
+        fq_nmod_mpoly_print_pretty(G[i], variables, poly_ring_ctx);
+        printf("\n");
+    }
+
     g_array_free(basis, TRUE);
     printf("-----------------------------------------\n");
 
