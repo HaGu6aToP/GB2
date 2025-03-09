@@ -222,43 +222,43 @@ void main(void){
     fq_nmod_mpoly_set_str_pretty(&basis[1], str_p2, variables, poly_ring_ctx); 
     fq_nmod_mpoly_set_str_pretty(&basis[2], str_p3, variables, poly_ring_ctx);
 
-    printf("Система:\n");
-    fq_nmod_mpoly_print_pretty(&basis[0], variables, poly_ring_ctx);
-    printf("\n");
-    fq_nmod_mpoly_print_pretty(&basis[1], variables, poly_ring_ctx);
-    printf("\n");
-    fq_nmod_mpoly_print_pretty(&basis[2], variables, poly_ring_ctx);
-    printf("\n");
     
-    // log_buchberger(basis, 3, poly_ring_ctx);
+    printf("Система:\n");
+    for(int i = 0; i < 3; i++) {
+        fq_nmod_mpoly_print_pretty(&basis[i], variables, poly_ring_ctx);
+        printf("\n");
+    }
 
-    fq_nmod_mpoly_struct* Q = flint_calloc(3, sizeof(fq_nmod_mpoly_struct));
+    
     fq_nmod_mpoly_t s, Sp;
     fq_nmod_mpoly_init(s, poly_ring_ctx);
     fq_nmod_mpoly_init(Sp, poly_ring_ctx);
     S(Sp, &basis[0], &basis[1], poly_ring_ctx);
 
-    printf("Система:\n");
-    fq_nmod_mpoly_print_pretty(&basis[0], variables, poly_ring_ctx);
-    printf("\n");
-    fq_nmod_mpoly_print_pretty(&basis[1], variables, poly_ring_ctx);
-    printf("\n");
-    fq_nmod_mpoly_print_pretty(&basis[2], variables, poly_ring_ctx);
-    printf("\n");
-
-    fq_nmod_mpoly_divrem_ideal(&Q, s, Sp, &basis, 3, poly_ring_ctx);
-
-    fq_nmod_mpoly_print_pretty(s, variables, poly_ring_ctx);
     
-    for (int i = 0; i < 3; i++)
-        fq_nmod_mpoly_init(&Q[i], poly_ring_ctx);
+    printf("S-полином: ");
+    fq_nmod_mpoly_print_pretty(Sp, variables, poly_ring_ctx);
+    printf("\n");
 
-    fq_nmod_mpoly_clear(&basis[0], poly_ring_ctx);
-    fq_nmod_mpoly_clear(&basis[1], poly_ring_ctx);
-    fq_nmod_mpoly_clear(&basis[2], poly_ring_ctx);
+    
+    if (fq_nmod_mpoly_is_zero(Sp, poly_ring_ctx)) {
+        fprintf(stderr, "Error:  S = 0\n");
+    } else {
+        
+        fq_nmod_mpoly_struct* Q = flint_calloc(3, sizeof(fq_nmod_mpoly_struct));
+        for(int i = 0; i < 3; i++) {
+            fq_nmod_mpoly_init(&Q[i], poly_ring_ctx);
+        }
 
-    for (int i = 0; i < 3; i++)
-        fq_nmod_mpoly_clear(&Q[i], poly_ring_ctx);
+        fq_nmod_mpoly_divrem_ideal(&Q, s, Sp, &basis, 3, poly_ring_ctx);
 
+        fq_nmod_mpoly_print_pretty(s, variables, poly_ring_ctx);
+        printf("\n");
 
+        for(int i = 0; i < 3; i++) {
+            fq_nmod_mpoly_clear(&Q[i], poly_ring_ctx);
+        }
+        flint_free(Q);
+
+    }
 }
