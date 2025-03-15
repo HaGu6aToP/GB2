@@ -57,5 +57,6 @@ void S(Polynom S, const Polynom p1, const Polynom p2, const PolynomRing ctx);
 void log_S(Polynom S, const Polynom p1, const Polynom p2, const PolynomRing ctx);
 int crit(GArray* G, GArray* B, ulong i, ulong j, const Polynom f, const Polynom g, const Polynom lcm, const PolynomRing ctx);
 Buchberger_result log_buchberger(const Basis basis, ulong t, const PolynomRing ctx);
+Buchberger_result buchberger(const Basis basis, ulong t, const PolynomRing ctx);
 void reduce_groebner_basis(Basis basis, ulong len, PolynomRing ctx);
 int is_groebner_basis(Basis basis, ulong len, PolynomRing ctx);

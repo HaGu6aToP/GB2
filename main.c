@@ -1,6 +1,12 @@
+#define _POSIX_C_SOURCE 199309L
 #include "headers.h"
+#include <time.h>
+
+
+
 
 // First aurgument is the file name. 
+// Second - amount of repeats
 // File consider the number of polynomials, field ordering, number of variables and the variables with the polynomials themselves. 
 // Each data on a new line.
 // Example:
@@ -29,7 +35,7 @@ void main(int argc, char** argv){
     ulong nvars; // Variables count
     char buff[BUFFER_SIZE];
     const char** variables;
-    const ordering_t order = ORD_DEGREVLEX; // Ordering
+    const ordering_t order = ORD_LEX; // Ordering
     ulong p; // Field order
     fq_nmod_ctx_t field_ctx; // Field
     fq_nmod_mpoly_ctx_t poly_ring_ctx; // Ring
@@ -39,11 +45,14 @@ void main(int argc, char** argv){
     fscanf(file, "%ld\n%ld\n%ld\n", &npoli, &p, &nvars);
     fgets(buff, BUFFER_SIZE, file);
 
+    // printf("%ld %ld %ld", npoli, p, nvars);
+
     variables = flint_calloc(nvars, sizeof(char*));
     get_variables(variables, nvars, buff);
 
     // Field init
-    fq_nmod_ctx_init_conway(field_ctx, &p, 1, "x");
+    fq_nmod_ctx_init(field_ctx, &p, 1, "x");
+    
 
     // Ring init
     fq_nmod_mpoly_ctx_init(poly_ring_ctx, nvars, order, field_ctx);
@@ -60,13 +69,39 @@ void main(int argc, char** argv){
     print_basis(basis, npoli, variables, poly_ring_ctx);
 
 
-    Buchberger_result GBasis = log_buchberger(basis, npoli, poly_ring_ctx);
+    Buchberger_result GBasis = buchberger(basis, npoli, poly_ring_ctx);
 
+    printf("Groebner basis:\n");
     print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
 
     int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
     if (check == 1) printf("This is Groebner basis :)\n");
     else printf("This is not Groebner basis :c\n");
+
+
+    //------------------------testing------------------------
+    struct timespec start, end;
+    double summ_time = 0;
+
+    for (int i = 0; i < repeats; i++){
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        buchberger(basis, npoli, poly_ring_ctx);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        summ_time += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    }
+
+    printf("Runnig time: %f s\n", summ_time/repeats);
+
+    // timeit_t t;
+    // slong summary_time = 0;
+    // for (int i = 0; i < repeats; i++){
+    //     timeit_start(t);
+    //     buchberger(basis, npoli, poly_ring_ctx);
+    //     timeit_stop(t);
+    //     summary_time += t->cpu;
+    // }
+
+    // printf("CPU time: %ld ms\n", summary_time/repeats);
     
     // ----------------------free resources----------------------
     free_basis(basis, npoli, poly_ring_ctx);

@@ -121,6 +121,74 @@ int crit(GArray* G, GArray* B, ulong i, ulong j, const Polynom f, const Polynom 
     fq_nmod_mpoly_init(Q, ctx);
     fq_nmod_mpoly_init(R, ctx);
 
+    // log_B(B);
+    // log_G(G, ctx);
+
+    for(k = 0; k < G->len; k++){
+        if (k == i || k == j) continue;
+        h = g_array_index(G, Polynom, k);
+
+        // printf("\nSelected k: %ld", k);
+        // printf("\nh=");
+        // fq_nmod_mpoly_print_pretty(h, NULL, ctx);
+        // printf("\n");
+        
+        
+        if (i < k){
+            pair_one.first = i;
+            pair_one.second = k;
+        } else {
+            pair_one.first = k;
+            pair_one.second = i;
+        }
+
+        if (j < k){
+            pair_two.first = j;
+            pair_two.second = k;
+        } else {
+            pair_two.first = k;
+            pair_two.second = j;
+        }
+
+        LT(lt_h, h, ctx);
+        fq_nmod_mpoly_divrem(Q, R, lcm, lt_h, ctx);
+
+        g_array_sort(B, cmpPair);
+        flag1 = g_array_binary_search(B, &pair_one, cmpPair, NULL);
+        flag2 = g_array_binary_search(B, &pair_two, cmpPair, NULL);
+        flag3 = fq_nmod_mpoly_is_zero(R, ctx);
+
+        // printf("Найдена ли пара (%ld, %ld): %d\n", i, k, flag1);
+        // printf("Найдена ли пара (%ld, %ld): %d\n", j, k, flag2);
+        // printf("Остаток от деления: ");
+        // fq_nmod_mpoly_print_pretty(R, NULL, ctx);
+        // printf("\n");
+
+        if ((flag1 == 0) && ( flag2 == 0) && (fq_nmod_mpoly_is_zero(R, ctx))){
+            res = 1;
+            break;
+        }
+    }
+    fq_nmod_mpoly_clear(lt_h, ctx);
+    fq_nmod_mpoly_clear(Q, ctx);
+    fq_nmod_mpoly_clear(R, ctx);
+    return res;
+}
+
+int log_crit(GArray* G, GArray* B, ulong i, ulong j, const Polynom f, const Polynom g, const Polynom lcm, const PolynomRing ctx){
+    ulong k;
+    int flag1, flag2, flag3;
+    int res = 0;
+    Pair pair_one, pair_two;
+    fq_nmod_mpoly_t lt_h, Q, R;
+    Polynom h;
+
+    // pair_one.first = i;
+    // pair_one.first = j;
+    fq_nmod_mpoly_init(lt_h, ctx);
+    fq_nmod_mpoly_init(Q, ctx);
+    fq_nmod_mpoly_init(R, ctx);
+
     log_B(B);
     log_G(G, ctx);
 
@@ -266,7 +334,7 @@ Buchberger_result log_buchberger(const Basis basis, ulong t, const PolynomRing c
         printf("\nLCM(f, g)=");
         fq_nmod_mpoly_print_pretty(lcm, NULL, ctx);
         printf("\n");
-        flag2 = crit(G, B, i, j, f, g, lcm, ctx);
+        flag2 = log_crit(G, B, i, j, f, g, lcm, ctx);
 
         printf("\n---------------------------------\n");
 
@@ -365,20 +433,20 @@ int is_groebner_basis(Basis basis, ulong len, PolynomRing ctx){
         for(j = i; j < len; j++){
             f = basis[i];
             g = basis[j];
-            log_S(S_polynom, f, g, ctx);
+            // log_S(S_polynom, f, g, ctx);
             fq_nmod_mpoly_divrem_ideal(Q, S_mod_G, S_polynom, basis, len, ctx);
             if (fq_nmod_mpoly_is_zero(S_mod_G, ctx) == 0){
                 
-                printf("\n\ni----------------------------is_groebner_basis----------------------------\n");
-                printf("f: ");
-                fq_nmod_mpoly_print_pretty(f, NULL, ctx);
-                printf("\ng: ");
-                fq_nmod_mpoly_print_pretty(g, NULL, ctx);
-                printf("\nS(f, g): ");
-                fq_nmod_mpoly_print_pretty(S_polynom, NULL, ctx);
-                printf("\nS mod G: ");
-                fq_nmod_mpoly_print_pretty(S_mod_G, NULL, ctx);
-                printf("\n\n");
+                // printf("\n\ni----------------------------is_groebner_basis----------------------------\n");
+                // printf("f: ");
+                // fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+                // printf("\ng: ");
+                // fq_nmod_mpoly_print_pretty(g, NULL, ctx);
+                // printf("\nS(f, g): ");
+                // fq_nmod_mpoly_print_pretty(S_polynom, NULL, ctx);
+                // printf("\nS mod G: ");
+                // fq_nmod_mpoly_print_pretty(S_mod_G, NULL, ctx);
+                // printf("\n\n");
 
                 free_basis(Q, len, ctx);
                 fq_nmod_mpoly_clear(S_polynom, ctx);
@@ -396,3 +464,107 @@ int is_groebner_basis(Basis basis, ulong len, PolynomRing ctx){
     return flag;
 }
 
+
+
+Buchberger_result buchberger(const Basis basis, ulong t, const PolynomRing ctx){
+    ulong i, j, k, l;
+    int flag1, flag2;
+    flint_rand_t rand;
+    Polynom f, g;
+    fq_nmod_mpoly_t lcm, lt_f, lt_g, mul, S_polynom, S_mod_G;
+    Pair pair;
+    //----------------------------------------------------------------
+    
+    GArray* B = g_array_new(FALSE, FALSE, sizeof(Pair));
+    GArray* G = g_array_new(FALSE, FALSE, sizeof(Polynom));
+    flint_randinit(rand);
+    fq_nmod_mpoly_init(lcm, ctx);
+    fq_nmod_mpoly_init(lt_f, ctx);
+    fq_nmod_mpoly_init(lt_g, ctx);
+    fq_nmod_mpoly_init(mul, ctx);
+    fq_nmod_mpoly_init(S_polynom, ctx);
+    fq_nmod_mpoly_init(S_mod_G, ctx);
+    //----------------------------------------------------------------
+
+    
+    for(i = 0; i < t-1; i++){
+        for(j = i + 1; j < t; j++){
+            Pair pair = {i, j};
+            g_array_append_val(B, pair);
+        }
+    }
+
+
+    for(i = 0; i < t; i++){
+        Polynom f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+        fq_nmod_mpoly_init(f, ctx);
+        fq_nmod_mpoly_set(f, basis[i], ctx);
+        g_array_append_val(G, f);
+    }
+
+    while(B->len != 0){
+        k = n_randint(rand, B->len);
+        pair = g_array_index(B, Pair, k);
+        i = pair.first;
+        j = pair.second;
+        f = g_array_index(G, Polynom, i);
+        g = g_array_index(G, Polynom, j);
+
+        LCM(lcm, f, g, ctx);
+        LT(lt_f, f, ctx);
+        LT(lt_g, g, ctx);
+
+        fq_nmod_mpoly_mul(mul, lt_f, lt_g, ctx);
+
+        flag1 = fq_nmod_mpoly_equal(lcm, mul, ctx);
+        flag2 = crit(G, B, i, j, f, g, lcm, ctx);
+
+        if ((flag1 == 0) && (flag2 == 0)){
+            S(S_polynom, f, g, ctx);
+
+            Basis Q = init_empty_basis(G->len, ctx);
+            Basis G_basis = from_garray(G);
+
+            fq_nmod_mpoly_divrem_ideal(Q, S_mod_G, S_polynom, G_basis, G->len, ctx);
+
+            
+            free_basis(Q, G->len, ctx);
+            flint_free(G_basis);
+
+            if (fq_nmod_mpoly_is_zero(S_mod_G, ctx) == 0){
+                Polynom new_polynom = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+                fq_nmod_mpoly_init(new_polynom, ctx);
+                fq_nmod_mpoly_set(new_polynom, S_mod_G, ctx);
+                g_array_append_val(G, new_polynom);
+
+                for(l = 0; l < t; l++){
+                    Pair pair = {l, t};
+                    g_array_append_val(B, pair);
+                }
+
+                t++;
+
+                
+            }
+        }
+
+        g_array_remove_index(B, k);
+    }
+
+
+    //----------------------Освобождение ресурсов------------------------
+    g_array_free(B, TRUE);
+    flint_randclear(rand);
+    fq_nmod_mpoly_clear(lcm, ctx);
+    fq_nmod_mpoly_clear(lt_f, ctx);
+    fq_nmod_mpoly_clear(lt_g, ctx);
+    fq_nmod_mpoly_clear(mul, ctx);
+    fq_nmod_mpoly_clear(S_polynom, ctx);
+    fq_nmod_mpoly_clear(S_mod_G, ctx);
+    
+    Basis GBasis = from_garray(G);
+    Buchberger_result res = {GBasis, G->len};
+    g_array_free(G, TRUE);
+    
+    return res;
+}

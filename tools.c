@@ -60,10 +60,23 @@ void free_variables(const char** variables, ulong nvars){
 void read_polinomials(Basis basis, ulong npoli,  const char** variables, PolynomRing ctx, FILE* file){
     char buff[BUFFER_SIZE];
     
-
+    // for(int i = 0; i < 3; i++)
+    //     printf("%s-\n", variables[i]);
     for(int i = 0; i < npoli; i++){
         fgets(buff, BUFFER_SIZE, file);
+        
+        if (buff[strlen(buff) - 1] == '\n') buff[strlen(buff) - 1] = '\0';
+
+        // printf("poli = %s", buff);
+        // fq_nmod_mpoly_print_pretty(basis[i], variables, ctx);
+        // printf(" %d ", i);
+
+
         fq_nmod_mpoly_set_str_pretty(basis[i], buff, variables, ctx);
+
+        // fq_nmod_mpoly_print_pretty(basis[i], variables, ctx);
+        // printf("\n");
+        // fq_nmod_mpoly_one(basis[i], ctx);
     }
 }
 
