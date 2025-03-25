@@ -18,12 +18,12 @@
 # start: tools basis_tools main
 # 	gcc tools.o basis_tools.o main.o -omain
 
-target = main
+target = test
 # src = $(wildcard *.c)
-srcnames = main.c tools.c basis_tools.c buchberger.c
-srcdir = ./src/
-incdir = ./include/
-src = $(addprefix $(srcdir), $(srcnames))
+srcnames = tools.c basis_tools.c buchberger.c
+srcdir = ../src/
+incdir = /usr/code/GB2/include/
+src = $(addprefix $(srcdir), $(srcnames)) min_find_test.c main.c
 obj = $(patsubst %.c, %.o, $(src))
 
 
@@ -32,7 +32,7 @@ cflags = -I/usr/lib/x86_64-linux-gnu/glib-2.0/include \
 		-I/usr/include/glib-2.0 \
 		-I/usr/include/x86_64-linux-gnu/flint \
 		-I/usr/code/GB2 \
-		-I./include/
+		-I../include/
 
 ldflags = -L/usr/lib/x86_64-linux-gnu \
 		-lmpfr -lflint -lgmp -lglib-2.0

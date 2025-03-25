@@ -1,0 +1,2 @@
+void min_find_test_v2();
+void min_find_test_v1();

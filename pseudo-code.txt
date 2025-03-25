@@ -51,3 +51,9 @@ buchberger(basis):
 
                 t = t + 1
         B -= (i, j) 
+
+
+reduce(basis, B):
+    flag = true
+    while flag:
+        
