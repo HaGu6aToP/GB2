@@ -768,7 +768,7 @@ void log_GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
                     g_array_remove_index(_P, j);
 
                     if (j < i)
-                        i++;
+                        i--;
                 }
             }
             j++;
@@ -907,7 +907,7 @@ void GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
                     g_array_remove_index(_P, j);
 
                     if (j < i)
-                        i++;
+                        i--;
                 }
             }
             j++;
