@@ -58,9 +58,9 @@ void log_G(GArray* G, PolynomRing ctx);
 int parseInt(char* chars);
 int powInt(int x, int y);
 void print_poly(const char* header, Polynom p, const char** vars, PolynomRing ctx);
-void init_SPair(SPair* pspair);
+void init_SPair(SPair* pspair, PolynomRing ctx);
 void set_SPair(SPair* pspair, Polynom p, ulong first, ulong second, PolynomRing ctx);
-void free_SPair(SPair* pspair);
+void free_SPair(SPair* pspair, PolynomRing ctx);
 void copy_SPair(SPair* pspair, const SPair* resourse);
 
 // buchberger
@@ -72,6 +72,7 @@ Buchberger_result log_buchberger(const Basis basis, ulong t, const PolynomRing c
 Buchberger_result buchberger(const Basis basis, ulong t, const PolynomRing ctx);
 int is_groebner_basis(Basis basis, ulong len, PolynomRing ctx);
 Buchberger_result buchberger_v2(const Basis basis, ulong t, const PolynomRing ctx);
+Buchberger_result log_buchberger_v2(const Basis basis, ulong t, const PolynomRing ctx);
 int find_min(GArray* P, PolynomRing ctx);
 SPair find_min_v1(GArray* F, GArray* P, PolynomRing ctx);
-SPair log_find_min(GArray* F, GArray* P, PolynomRing ctx);
+int log_find_min(GArray* P, PolynomRing ctx); 

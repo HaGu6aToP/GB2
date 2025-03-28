@@ -570,73 +570,6 @@ Buchberger_result buchberger(const Basis basis, ulong t, const PolynomRing ctx){
 }
 
 
-SPair log_find_min(GArray* F, GArray* P, PolynomRing ctx){
-    fq_nmod_mpoly_t S_poly, lt_min, lt_S;
-    SPair res;
-    Polynom f, g;
-    Pair* ppair;
-    int i, j, k;
-//----------------------------------------------------
-    fq_nmod_mpoly_init(S_poly, ctx);
-    fq_nmod_mpoly_init(lt_min, ctx);
-    fq_nmod_mpoly_init(lt_S, ctx);
-//----------------------------------------------------
-    ppair = (Pair*)P->data;
-    i = ppair->first;
-    j = ppair->second;
-    f = g_array_index(F, Polynom, i);
-    g = g_array_index(F, Polynom, j);
-    printf("(%d, %d)\n", i, j);
-    print_poly("f:", f, NULL, ctx);
-    print_poly("g:", g, NULL, ctx);
-    S(S_poly, f, g, ctx);
-    print_poly("S(f, g)", S_poly, NULL, ctx);
-
-    if (fq_nmod_mpoly_is_zero(S_poly, ctx) == 0) LT(lt_min, S_poly, ctx);
-
-    res.poly = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
-    res.first = i;
-    res.second = j;
-    fq_nmod_mpoly_set(res.poly, S_poly, ctx);
-    ppair++;
-    
-    for(k = 1; k < P->len; k++){
-        i = ppair->first;
-        j = ppair->second;
-        f = g_array_index(F, Polynom, i);
-        g = g_array_index(F, Polynom, j);
-        printf("Pair=(%d, %d)\n", i, j);
-        print_poly("f:", f, NULL, ctx);
-        print_poly("g:", g, NULL, ctx);
-        S(S_poly, f, g, ctx);
-        print_poly("S(f, g)", S_poly, NULL, ctx);
-
-        if (fq_nmod_mpoly_is_zero(S_poly, ctx) == 0) LT(lt_S, S_poly, ctx);
-        print_poly("lt_min:", lt_min, NULL, ctx);
-        print_poly("lt_S:", lt_S, NULL, ctx);
-        printf("lt_min > lt_s: %d\n", fq_nmod_mpoly_cmp(lt_min, lt_S, ctx));
-        if (fq_nmod_mpoly_cmp(lt_min, lt_S, ctx) == 1){
-            fq_nmod_mpoly_set(res.poly, S_poly, ctx);
-            fq_nmod_mpoly_set(lt_min, lt_S, ctx);
-            res.first = i;
-            res.second = j;
-        }
-
-        printf("Current min: ");
-        fq_nmod_mpoly_print_pretty(res.poly, NULL, ctx);
-        printf("\n");
-
-        ppair++;
-    }
-//----------------------------------------------------
-    fq_nmod_mpoly_clear(S_poly, ctx);
-    fq_nmod_mpoly_clear(lt_min, ctx);
-    fq_nmod_mpoly_clear(lt_S, ctx);
-//----------------------------------------------------
-    return res;
-}
-
-
 void get_data_find_min_v1(Pair* ppair, GArray* F, int* i, int* j, Polynom f, Polynom g, Polynom S_poly, PolynomRing ctx){
     *i = ppair->first;
     *j = ppair->second;
@@ -645,9 +578,47 @@ void get_data_find_min_v1(Pair* ppair, GArray* F, int* i, int* j, Polynom f, Pol
     S(S_poly, f, g, ctx);
 }
 
+int log_find_min(GArray* P, PolynomRing ctx){
+    fq_nmod_mpoly_t lt_min, lt_S;
+    int res = 0;
+    SPair* pspair;
+    int i;
+    printf("------------------find_min------------------\n");
+//----------------------------------------------------
+    fq_nmod_mpoly_init(lt_min, ctx);
+    fq_nmod_mpoly_init(lt_S, ctx);
+//----------------------------------------------------
+    if (P->len > 0){
+        pspair = (SPair*)P->data;
+        LT(lt_min, pspair->poly, ctx);
+        res = 0;
+        pspair++;
+
+        for(i = 1; i < P->len; i++){
+            print_poly("poly:", pspair->poly, NULL, ctx);
+            LT(lt_S, pspair->poly, ctx);
+            printf("i=%d, %d\n", i, P->len);
+            print_poly("curr min:", lt_min, NULL, ctx);
+            print_poly("curr poly:", lt_S, NULL, ctx);
+            printf("cmp=%d\n", fq_nmod_mpoly_cmp(lt_min, lt_S, ctx));
+            if (fq_nmod_mpoly_cmp(lt_min, lt_S, ctx) == 1){
+                fq_nmod_mpoly_set(lt_min, lt_S, ctx);
+                res = i;
+            }
+            pspair++;
+        }
+    }
+//----------------------------------------------------
+    fq_nmod_mpoly_clear(lt_min, ctx);
+    fq_nmod_mpoly_clear(lt_S, ctx);
+    printf("--------------------------------------------\n");
+//----------------------------------------------------
+    return res;
+}
+
 int find_min(GArray* P, PolynomRing ctx){
     fq_nmod_mpoly_t lt_min, lt_S;
-    int res = -1;
+    int res = 0;
     SPair* pspair;
     int i;
 //----------------------------------------------------
@@ -662,7 +633,6 @@ int find_min(GArray* P, PolynomRing ctx){
 
         for(i = 1; i < P->len; i++){
             LT(lt_S, pspair->poly, ctx);
-
             if (fq_nmod_mpoly_cmp(lt_min, lt_S, ctx) == 1){
                 fq_nmod_mpoly_set(lt_min, lt_S, ctx);
                 res = i;
@@ -676,6 +646,7 @@ int find_min(GArray* P, PolynomRing ctx){
 //----------------------------------------------------
     return res;
 }
+
 
 SPair find_min_v1(GArray* F, GArray* P, PolynomRing ctx){
     fq_nmod_mpoly_t S_poly, lt_min, lt_S;
@@ -693,7 +664,7 @@ SPair find_min_v1(GArray* F, GArray* P, PolynomRing ctx){
     if (fq_nmod_mpoly_is_zero(S_poly, ctx) == 0) LT(lt_min, S_poly, ctx);
 
     // res.poly = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
-    init_SPair(&res);
+    init_SPair(&res, ctx);
     set_SPair(&res, S_poly, i, j, ctx);
     ppair++;
     
@@ -723,24 +694,13 @@ SPair find_min_v1(GArray* F, GArray* P, PolynomRing ctx){
     return res;
 }
 
-// Элементы в rem_items расположены по возрастанию
-void rem_for_buffer(GArray* P, GArray* rem_items){
-    int* j;
-    int i;
-    j = (int*)rem_items->data;
-    for(i = 0; i < rem_items->len; i++){
-        g_array_remove_index(P, *j-i);
-        j++;
-    }
-}
-
-void GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
+void log_GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
     GArray* _P;
     GArray* rem_items;
     Polynom* ph;
     SPair* pspair;
     Polynom f, g;
-    fq_nmod_mpoly_t lcm, div, lt_h, L, lt_f;
+    fq_nmod_mpoly_t lcm, div, lt_h, L, lt_f, gcd;
     int i, j, flag1, flag2, flag3;
 //----------------------------------------------------
     _P = g_array_new(FALSE, FALSE, sizeof(SPair));
@@ -750,19 +710,22 @@ void GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
     fq_nmod_mpoly_init(lt_h, ctx);
     fq_nmod_mpoly_init(L, ctx);
     fq_nmod_mpoly_init(lt_f, ctx);
+    fq_nmod_mpoly_init(gcd, ctx);
 
     LT(lt_h, h, ctx);
 //----------------------------------------------------
-    for(i = 0; i < F->len; i++){
-        SPair sp = {NULL, i, F->len};
+    for(i = 0; i < t; i++){
+        SPair sp = {NULL, i, t};
         g_array_append_val(_P, sp);
     }
 
-    pspair = (SPair*)P->data;
-    for(i = 0; i < P->len; i++){
-        f = g_array_index(F, Polynom, pspair->first);
-        g = g_array_index(F, Polynom, pspair->second);
+    i = 0;
+    while(i < P->len){
+        SPair sp = g_array_index(P, SPair, i);
+        f = g_array_index(F, Polynom, sp.first);
+        g = g_array_index(F, Polynom, sp.second);
         LCM(L, f, g, ctx);
+
         flag1 = fq_nmod_mpoly_divides(div, L, lt_h, ctx);
 
         LCM(lcm, h, f, ctx);
@@ -771,17 +734,104 @@ void GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
         LCM(lcm, h, g, ctx);
         flag3 = fq_nmod_mpoly_equal(lcm, L, ctx);
 
-        if ((flag1 == 1) && (flag2 == 0) && (flag3 == 0))
-            g_array_append_val(rem_items, i);
+        if((flag1 == 1) && (flag2 == 0) && (flag3 == 0)){
+            printf("rem pair(");
+            fq_nmod_mpoly_print_pretty(sp.poly, NULL, ctx);
+            printf(", %ld, %ld) from P\n", sp.first, sp.second);
+            free_SPair(&sp, ctx);
+            g_array_remove_index(P, i);
+            i--;
+        }
+        i++;
+    }
+
+    printf("_P:\n");
+    for(i = 0; i < _P->len; i++){
+        printf("(NULL, %ld, %ld)\n", g_array_index(_P, SPair, i).first, g_array_index(_P, SPair, i).second);
+    }
+
+    i = 0;
+    while(i < _P->len){
+        printf("i: %d, _P->len: %d\n", i, _P->len);
+        
+        j = 0;
+        while(j < _P->len){
+            printf("j: %d\n", j);
+            if (i != j){
+                f = g_array_index(F, Polynom, g_array_index(_P, SPair, i).first);
+                g = g_array_index(F, Polynom, g_array_index(_P, SPair, j).first);
+
+                LCM(lcm, f, h, ctx);
+                LCM(L, g, h, ctx);
+                if (fq_nmod_mpoly_divides(div, L, lcm, ctx) == 1){
+                    printf("rem pair: (%ld, %ld) from _P\n", g_array_index(_P, SPair, j).first, g_array_index(_P, SPair, j).second);
+                    g_array_remove_index(_P, j);
+
+                    if (j < i)
+                        i++;
+                }
+            }
+            j++;
+        }
+        i++;
+    }
+
+    printf("_P after:\n");
+    for(i = 0; i < _P->len; i++){
+        printf("(NULL, %ld, %ld)\n", g_array_index(_P, SPair, i).first, g_array_index(_P, SPair, i).second);
+    }
+
+    i = 0;
+    while(i < _P->len){
+        f = g_array_index(F, Polynom, g_array_index(_P, SPair, i).first);
+        LT(lt_f, f, ctx);
+
+        fq_nmod_mpoly_gcd(gcd, lt_f, lt_h, ctx);
+        if (fq_nmod_mpoly_is_one(gcd, ctx) == 1){
+            g_array_remove_index(_P, i);
+        }
+        else
+            i++;
+    }
+
+    printf("_P after after:\n");
+    for(i = 0; i < _P->len; i++){
+        printf("(NULL, %ld, %ld)\n", g_array_index(_P, SPair, i).first, g_array_index(_P, SPair, i).second);
+    }
+
+    if (t == F->len){
+        Polynom new_poly = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+        fq_nmod_mpoly_init(new_poly, ctx);
+        fq_nmod_mpoly_set(new_poly, h, ctx);
+
+        g_array_append_val(F, new_poly);
+    }
+
+    pspair = (SPair*)_P->data;
+    for(i = 0; i < _P->len; i++){
+        SPair sp = {};
+        f = g_array_index(F, Polynom, pspair->first);
+        S(L, f, h, ctx); 
+
+        if(fq_nmod_mpoly_is_zero(L, ctx) == 0){
+            init_SPair(&sp, ctx);
+            set_SPair(&sp, L, pspair->first, t, ctx);
+            g_array_append_val(P, sp);
+        }
+        // S(sp.poly, f, h, ctx);
+        // sp.first = pspair->first;
+        // // sp.second = pspair->second;
+        // sp.second = t;
 
         pspair++;
     }
 
-    rem_for_buffer(P, rem_items);
-    g_array_free(rem_items, TRUE);
-    rem_items = g_array_new(FALSE, FALSE, sizeof(int));
-
-    
+    printf("P res:\n");
+    for(i = 0; i < P->len; i++){
+        printf("(");
+        fq_nmod_mpoly_print_pretty(g_array_index(P, SPair, i).poly, NULL, ctx);
+        printf(", %ld, %ld)\n", g_array_index(P, SPair, i).first, g_array_index(P, SPair, i).second);
+    }
 
 //----------------------------------------------------
     g_array_free(_P, TRUE);
@@ -791,11 +841,134 @@ void GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
     fq_nmod_mpoly_clear(lt_h, ctx);
     fq_nmod_mpoly_clear(L, ctx);
     fq_nmod_mpoly_clear(lt_f, ctx);
+    fq_nmod_mpoly_clear(gcd, ctx);
 }
 
-Buchberger_result buchberger_v2(const Basis basis, ulong t, const PolynomRing ctx){
+void GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
+    GArray* _P;
+    GArray* rem_items;
+    Polynom* ph;
+    SPair* pspair;
+    Polynom f, g;
+    fq_nmod_mpoly_t lcm, div, lt_h, L, lt_f, gcd;
+    int i, j, flag1, flag2, flag3;
+//----------------------------------------------------
+    _P = g_array_new(FALSE, FALSE, sizeof(SPair));
+    rem_items = g_array_new(FALSE, FALSE, sizeof(ulong));
+    fq_nmod_mpoly_init(lcm, ctx);
+    fq_nmod_mpoly_init(div, ctx);
+    fq_nmod_mpoly_init(lt_h, ctx);
+    fq_nmod_mpoly_init(L, ctx);
+    fq_nmod_mpoly_init(lt_f, ctx);
+    fq_nmod_mpoly_init(gcd, ctx);
+
+    LT(lt_h, h, ctx);
+//----------------------------------------------------
+    for(i = 0; i < t; i++){
+        SPair sp = {NULL, i, t};
+        g_array_append_val(_P, sp);
+    }
+
+    i = 0;
+    while(i < P->len){
+        SPair sp = g_array_index(P, SPair, i);
+        f = g_array_index(F, Polynom, sp.first);
+        g = g_array_index(F, Polynom, sp.second);
+        LCM(L, f, g, ctx);
+
+        flag1 = fq_nmod_mpoly_divides(div, L, lt_h, ctx);
+
+        LCM(lcm, h, f, ctx);
+        flag2 = fq_nmod_mpoly_equal(lcm, L, ctx);
+
+        LCM(lcm, h, g, ctx);
+        flag3 = fq_nmod_mpoly_equal(lcm, L, ctx);
+
+        if((flag1 == 1) && (flag2 == 0) && (flag3 == 0)){
+            free_SPair(&sp, ctx);
+            g_array_remove_index(P, i);
+            i--;
+        }
+        i++;
+    }
+
+    i = 0;
+    while(i < _P->len){
+        
+        j = 0;
+        while(j < _P->len){
+            if (i != j){
+                f = g_array_index(F, Polynom, g_array_index(_P, SPair, i).first);
+                g = g_array_index(F, Polynom, g_array_index(_P, SPair, j).first);
+
+                LCM(lcm, f, h, ctx);
+                LCM(L, g, h, ctx);
+                if (fq_nmod_mpoly_divides(div, L, lcm, ctx) == 1){
+                    g_array_remove_index(_P, j);
+
+                    if (j < i)
+                        i++;
+                }
+            }
+            j++;
+        }
+        i++;
+    }
+
+    i = 0;
+    while(i < _P->len){
+        f = g_array_index(F, Polynom, g_array_index(_P, SPair, i).first);
+        LT(lt_f, f, ctx);
+
+        fq_nmod_mpoly_gcd(gcd, lt_f, lt_h, ctx);
+        if (fq_nmod_mpoly_is_one(gcd, ctx) == 1){
+            g_array_remove_index(_P, i);
+        }
+        else
+            i++;
+    }
+
+    if (t == F->len){
+        Polynom new_poly = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+        fq_nmod_mpoly_init(new_poly, ctx);
+        fq_nmod_mpoly_set(new_poly, h, ctx);
+
+        g_array_append_val(F, new_poly);
+    }
+
+    pspair = (SPair*)_P->data;
+    for(i = 0; i < _P->len; i++){
+        SPair sp = {};
+        f = g_array_index(F, Polynom, pspair->first);
+        S(L, f, h, ctx); 
+
+        if(fq_nmod_mpoly_is_zero(L, ctx) == 0){
+            init_SPair(&sp, ctx);
+            set_SPair(&sp, L, pspair->first, t, ctx);
+            g_array_append_val(P, sp);
+        }
+
+        pspair++;
+    }
+
+//----------------------------------------------------
+    g_array_free(_P, TRUE);
+    g_array_free(rem_items, TRUE);
+    fq_nmod_mpoly_clear(lcm, ctx);
+    fq_nmod_mpoly_clear(div, ctx);
+    fq_nmod_mpoly_clear(lt_h, ctx);
+    fq_nmod_mpoly_clear(L, ctx);
+    fq_nmod_mpoly_clear(lt_f, ctx);
+    fq_nmod_mpoly_clear(gcd, ctx);
+}
+
+Buchberger_result log_buchberger_v2(const Basis basis, ulong t, const PolynomRing ctx){
     GArray *F, *P;
     Polynom* hp;
+    Polynom S_poly;
+    Basis Q, G;
+    fq_nmod_mpoly_t reminder;
+    SPair sp;
     int i;
 //----------------------------------------------------
     F = g_array_new(FALSE, FALSE, sizeof(Polynom));
@@ -807,13 +980,109 @@ Buchberger_result buchberger_v2(const Basis basis, ulong t, const PolynomRing ct
     }
 
     P = g_array_new(FALSE, FALSE, sizeof(SPair));
+    fq_nmod_mpoly_init(reminder, ctx);
+//----------------------------------------------------
+    hp = (Polynom*)F->data;
+    for(i = 0; i < F->len; i++){
+        log_GMI(F, P, *hp, i, ctx);
+        hp++;
+    }
+
+    while(P->len > 0){
+        if (F->len % 100 == 0)
+            printf("F->len: %d\n", F->len);
+
+        i = log_find_min(P, ctx);
+        sp = g_array_index(P, SPair, i);
+
+        printf("curr P:\n");
+        for(int k = 0; k<P->len; k++){
+            SPair sp2 = g_array_index(P, SPair, k);
+            printf("(");
+            fq_nmod_mpoly_print_pretty(sp2.poly, NULL, ctx);
+            printf(", %ld, %ld)\n", sp2.first, sp2.second);
+        }
+
+        print_poly("min:", sp.poly, NULL, ctx);
+        printf("\n");
+
+        Q = init_empty_basis(F->len, ctx);
+        fq_nmod_mpoly_divrem_ideal(Q, reminder, sp.poly, (Polynom*)F->data, F->len, ctx);
+        free_basis(Q, F->len, ctx);
+        print_poly("S_min mod F:", reminder, NULL, ctx);
+
+        free_SPair(&sp, ctx);
+        g_array_remove_index(P, i);
+        
+        if (fq_nmod_mpoly_is_zero(reminder, ctx) == 0){
+            log_GMI(F, P, reminder, F->len, ctx);
+        }
+
+        printf("curr basis(%d):\n", F->len);
+        for(i = 0; i<F->len; i++){
+            fq_nmod_mpoly_print_pretty(g_array_index(F, Polynom, i), NULL, ctx);
+            printf("\n");
+        }
+    }
+//----------------------------------------------------
+    Basis res = from_garray(F);
+    ulong len = F->len;
+    Buchberger_result resres = {res, len};
+    fq_nmod_mpoly_clear(reminder, ctx);
+    g_array_free(F, TRUE);
+    g_array_free(P, TRUE);
+
+    return resres;
+}
+
+Buchberger_result buchberger_v2(const Basis basis, ulong t, const PolynomRing ctx){
+    GArray *F, *P;
+    Polynom* hp;
+    Polynom S_poly;
+    Basis Q, G;
+    fq_nmod_mpoly_t reminder;
+    SPair sp;
+    int i;
+//----------------------------------------------------
+    F = g_array_new(FALSE, FALSE, sizeof(Polynom));
+    for(i = 0; i < t; i++){
+        Polynom f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+        fq_nmod_mpoly_init(f, ctx);
+        fq_nmod_mpoly_set(f, basis[i], ctx);
+        g_array_append_val(F, f);
+    }
+
+    P = g_array_new(FALSE, FALSE, sizeof(SPair));
+    fq_nmod_mpoly_init(reminder, ctx);
 //----------------------------------------------------
     hp = (Polynom*)F->data;
     for(i = 0; i < F->len; i++){
         GMI(F, P, *hp, i, ctx);
         hp++;
     }
+
+    while(P->len > 0){
+        i = find_min(P, ctx);
+        sp = g_array_index(P, SPair, i);
+
+        Q = init_empty_basis(F->len, ctx);
+        fq_nmod_mpoly_divrem_ideal(Q, reminder, sp.poly, (Polynom*)F->data, F->len, ctx);
+        free_basis(Q, F->len, ctx);
+
+        free_SPair(&sp, ctx);
+        g_array_remove_index(P, i);
+        
+        if (fq_nmod_mpoly_is_zero(reminder, ctx) == 0){
+            GMI(F, P, reminder, F->len, ctx);
+        }
+    }
 //----------------------------------------------------
+    Basis res = from_garray(F);
+    ulong len = F->len;
+    Buchberger_result resres = {res, len};
+    fq_nmod_mpoly_clear(reminder, ctx);
     g_array_free(F, TRUE);
     g_array_free(P, TRUE);
+
+    return resres;
 }

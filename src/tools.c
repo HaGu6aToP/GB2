@@ -124,8 +124,9 @@ void print_poly(const char* header, Polynom p, const char** vars, PolynomRing ct
     printf("\n");
 }
 
-void init_SPair(SPair* pspair){
+void init_SPair(SPair* pspair, PolynomRing ctx){
     pspair->poly = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+    fq_nmod_mpoly_init(pspair->poly, ctx);
 }
 
 void set_SPair(SPair* pspair, Polynom p, ulong first, ulong second, PolynomRing ctx){
@@ -134,7 +135,8 @@ void set_SPair(SPair* pspair, Polynom p, ulong first, ulong second, PolynomRing 
     pspair->second = second;
 }
 
-void free_SPair(SPair* pspair){
+void free_SPair(SPair* pspair, PolynomRing ctx){
+    fq_nmod_mpoly_clear(pspair->poly, ctx);
     flint_free(pspair->poly);
 }
 

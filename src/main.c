@@ -71,26 +71,46 @@ void main(int argc, char** argv){
 
     Buchberger_result GBasis = buchberger_v2(basis, npoli, poly_ring_ctx);
 
-    // printf("Groebner basis:\n");
-    // print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
+    printf("Groebner basis:\n");
+    print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
 
-    // int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    // if (check == 1) printf("This is Groebner basis :)\n");
-    // else printf("This is not Groebner basis :c\n");
+    int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    if (check == 1) printf("This is Groebner basis :)\n");
+    else printf("This is not Groebner basis :c\n");
+
+    // fq_nmod_mpoly_t polynom1;
+    // fq_nmod_mpoly_init(polynom1, poly_ring_ctx);
+    // fq_nmod_mpoly_t polynom2;
+    // fq_nmod_mpoly_init(polynom2, poly_ring_ctx);
+    // fq_nmod_mpoly_t S_poly;
+    // fq_nmod_mpoly_init(S_poly, poly_ring_ctx);
+
+    // fq_nmod_mpoly_set_str_pretty(polynom1, "4*x3^2*x4^5 + 5*x3^2*x4^4 + 6*x3^2*x4^3 + 4*x3^2*x4^2 + 4*x3^2*x4 + 5*x3^2", NULL, poly_ring_ctx);
+    // fq_nmod_mpoly_set_str_pretty(polynom2, "x3*x4^5 + 3*x3*x4^4 + 5*x3*x4^3 + x3*x4^2 + x3*x4 + 3*x3", NULL, poly_ring_ctx);
+
+    // print_poly("P1:", polynom1, NULL, poly_ring_ctx);
+    // print_poly("P2:", polynom2, NULL, poly_ring_ctx);
+
+    // log_S(S_poly, polynom1, polynom2, poly_ring_ctx);
+    // print_poly("S:", S_poly, NULL, poly_ring_ctx);
+
+    // fq_nmod_mpoly_clear(S_poly, poly_ring_ctx);
+    // fq_nmod_mpoly_clear(polynom1, poly_ring_ctx);
+    // fq_nmod_mpoly_clear(polynom2, poly_ring_ctx);
 
     
     //------------------------testing------------------------
-    // struct timespec start, end;
-    // double summ_time = 0;
+    struct timespec start, end;
+    double summ_time = 0;
 
-    // for (int i = 0; i < repeats; i++){
-    //     clock_gettime(CLOCK_MONOTONIC, &start);
-    //     buchberger_v2(basis, npoli, poly_ring_ctx);
-    //     clock_gettime(CLOCK_MONOTONIC, &end);
-    //     summ_time += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    // }
+    for (int i = 0; i < repeats; i++){
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        buchberger_v2(basis, npoli, poly_ring_ctx);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        summ_time += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    }
 
-    // printf("Runnig time: %f s\n", summ_time/repeats);
+    printf("Runnig time: %f s\n", summ_time/repeats);
 
     // timeit_t t;
     // slong summary_time = 0;
