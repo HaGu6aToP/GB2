@@ -1039,21 +1039,30 @@ Buchberger_result buchberger_v2(const Basis basis, ulong t, const PolynomRing ct
     GArray *F, *P;
     Polynom* hp;
     Polynom S_poly;
-    Basis Q, G;
+    // Basis Q, G;
+    GArray* Q;
     fq_nmod_mpoly_t reminder;
     SPair sp;
     int i;
 //----------------------------------------------------
+    Q = g_array_new(FALSE, FALSE, sizeof(Polynom));
     F = g_array_new(FALSE, FALSE, sizeof(Polynom));
     for(i = 0; i < t; i++){
         Polynom f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
         fq_nmod_mpoly_init(f, ctx);
         fq_nmod_mpoly_set(f, basis[i], ctx);
         g_array_append_val(F, f);
+
+        Polynom g = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+        fq_nmod_mpoly_init(g, ctx);
+        g_array_append_val(Q, g);
     }
 
     P = g_array_new(FALSE, FALSE, sizeof(SPair));
     fq_nmod_mpoly_init(reminder, ctx);
+
+    
+    
 //----------------------------------------------------
     hp = (Polynom*)F->data;
     for(i = 0; i < F->len; i++){
@@ -1065,15 +1074,19 @@ Buchberger_result buchberger_v2(const Basis basis, ulong t, const PolynomRing ct
         i = find_min(P, ctx);
         sp = g_array_index(P, SPair, i);
 
-        Q = init_empty_basis(F->len, ctx);
-        fq_nmod_mpoly_divrem_ideal(Q, reminder, sp.poly, (Polynom*)F->data, F->len, ctx);
-        free_basis(Q, F->len, ctx);
+        // Q = init_empty_basis(F->len, ctx);
+        fq_nmod_mpoly_divrem_ideal((Polynom*)Q->data, reminder, sp.poly, (Polynom*)F->data, F->len, ctx);
+        // free_basis(Q, F->len, ctx);
 
         free_SPair(&sp, ctx);
         g_array_remove_index(P, i);
         
         if (fq_nmod_mpoly_is_zero(reminder, ctx) == 0){
             GMI(F, P, reminder, F->len, ctx);
+
+            Polynom g = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+            fq_nmod_mpoly_init(g, ctx);
+            g_array_append_val(Q, g);
         }
     }
 //----------------------------------------------------
@@ -1083,6 +1096,13 @@ Buchberger_result buchberger_v2(const Basis basis, ulong t, const PolynomRing ct
     fq_nmod_mpoly_clear(reminder, ctx);
     g_array_free(F, TRUE);
     g_array_free(P, TRUE);
+
+    for(i = 0; i < Q->len; i++){
+        Polynom g = g_array_index(Q, Polynom, i);
+        fq_nmod_mpoly_clear(g, ctx);
+    }
+
+    g_array_free(Q, TRUE);
 
     return resres;
 }
