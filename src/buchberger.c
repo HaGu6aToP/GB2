@@ -876,32 +876,43 @@ void GMI(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
         g = g_array_index(F, Polynom, sp.second);
         LCM(L, f, g, ctx);
 
-        flag1 = fq_nmod_mpoly_divides(div, L, lt_h, ctx);
+        // flag1 = fq_nmod_mpoly_divides(div, L, lt_h, ctx);
 
-        LCM(lcm, h, f, ctx);
-        flag2 = fq_nmod_mpoly_equal(lcm, L, ctx);
+        // LCM(lcm, h, f, ctx);
+        // flag2 = fq_nmod_mpoly_equal(lcm, L, ctx);
 
-        LCM(lcm, h, g, ctx);
-        flag3 = fq_nmod_mpoly_equal(lcm, L, ctx);
+        // LCM(lcm, h, g, ctx);
+        // flag3 = fq_nmod_mpoly_equal(lcm, L, ctx);
 
-        if((flag1 == 1) && (flag2 == 0) && (flag3 == 0)){
-            free_SPair(&sp, ctx);
-            g_array_remove_index(P, i);
-            i--;
+        // if((flag1 == 1) && (flag2 == 0) && (flag3 == 0)){
+        //     free_SPair(&sp, ctx);
+        //     g_array_remove_index(P, i);
+        //     i--;
+        // }
+
+        if (fq_nmod_mpoly_divides(div, L, lt_h, ctx) == 1){
+            LCM(lcm, h, f, ctx);
+            if (fq_nmod_mpoly_equal(lcm, L, ctx) == 0){
+                LCM(lcm, h, g, ctx);
+                if (fq_nmod_mpoly_equal(lcm, L, ctx) == 0){
+                    free_SPair(&sp, ctx);
+                    g_array_remove_index(P, i);
+                    i--;
+                }
+            }
         }
         i++;
     }
 
     i = 0;
     while(i < _P->len){
-        
+        f = g_array_index(F, Polynom, g_array_index(_P, SPair, i).first);
+        LCM(lcm, f, h, ctx);
         j = 0;
         while(j < _P->len){
             if (i != j){
-                f = g_array_index(F, Polynom, g_array_index(_P, SPair, i).first);
+                
                 g = g_array_index(F, Polynom, g_array_index(_P, SPair, j).first);
-
-                LCM(lcm, f, h, ctx);
                 LCM(L, g, h, ctx);
                 if (fq_nmod_mpoly_divides(div, L, lcm, ctx) == 1){
                     g_array_remove_index(_P, j);
