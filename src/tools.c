@@ -145,3 +145,33 @@ void copy_SPair(SPair* pspair, const SPair* resourse){
     pspair->first = resourse->first;
     pspair->second = resourse->second;
 }
+
+void print_ulong_garray(GArray* g){
+    for(int i = 0; i < g->len - 1; i++)
+        printf("%ld ", g_array_index(g, ulong, i));
+    printf("%ld\n", g_array_index(g, ulong, g->len-1));
+}
+
+void quick_sort(ulong *s_arr, int first, int last)
+{
+    if (first < last)
+    {
+        int left = first, right = last, middle = s_arr[(left + right) / 2];
+        do
+        {
+            while (s_arr[left] < middle) left++;
+            while (s_arr[right] > middle) right--;
+            if (left <= right)
+            {
+                int tmp = s_arr[left];
+                s_arr[left] = s_arr[right];
+                s_arr[right] = tmp;
+                left++;
+                right--;
+            }
+        } while (left <= right);
+        quick_sort(s_arr, first, right);
+        quick_sort(s_arr, left, last);
+    }
+}
+

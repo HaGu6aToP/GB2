@@ -3,8 +3,6 @@
 #include <time.h>
 
 
-
-
 // First aurgument is the file name. 
 // Second - amount of repeats
 // File consider the number of polynomials, field ordering, number of variables and the variables with the polynomials themselves. 
@@ -40,6 +38,10 @@ void main(int argc, char** argv){
     fq_nmod_ctx_t field_ctx; // Field
     fq_nmod_mpoly_ctx_t poly_ring_ctx; // Ring
     Basis basis;
+    ulong threads_count = 8;
+
+    NO_OF_IRRED = 4;
+    printf("%ld\n\n", NO_OF_IRRED);
     
     
     fscanf(file, "%ld\n%ld\n%ld\n", &npoli, &p, &nvars);
@@ -63,20 +65,23 @@ void main(int argc, char** argv){
 
     fclose(file);
 
+    // printf("%d", flint_get_num_available_threads());
+
     //------------------------------execution------------------------------
     
     printf("Basis:\n");
     print_basis(basis, npoli, variables, poly_ring_ctx);
 
 
-    Buchberger_result GBasis = buchberger_v2(basis, npoli, poly_ring_ctx);
+    // Buchberger_result GBasis = buchberger_v2_1(basis, npoli, poly_ring_ctx);
+    Buchberger_result GBasis = threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
 
     printf("Groebner basis:\n");
     print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
 
-    int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    if (check == 1) printf("This is Groebner basis :)\n");
-    else printf("This is not Groebner basis :c\n");
+    // int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    // if (check == 1) printf("This is Groebner basis :)\n");
+    // else printf("This is not Groebner basis :c\n");
 
     // fq_nmod_mpoly_t polynom1;
     // fq_nmod_mpoly_init(polynom1, poly_ring_ctx);
@@ -105,7 +110,8 @@ void main(int argc, char** argv){
 
     for (int i = 0; i < repeats; i++){
         clock_gettime(CLOCK_MONOTONIC, &start);
-        buchberger_v2(basis, npoli, poly_ring_ctx);
+        // buchberger_v2_1(basis, npoli, poly_ring_ctx);
+        threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
         clock_gettime(CLOCK_MONOTONIC, &end);
         summ_time += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
     }

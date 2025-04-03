@@ -23,7 +23,7 @@ target = test
 srcnames = tools.c basis_tools.c buchberger.c
 srcdir = ../src/
 incdir = /usr/code/GB2/include/
-src = $(addprefix $(srcdir), $(srcnames)) min_find_test.c main.c
+src = $(addprefix $(srcdir), $(srcnames)) min_find_test.c thread_test.c main.c
 obj = $(patsubst %.c, %.o, $(src))
 
 

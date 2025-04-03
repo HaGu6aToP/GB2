@@ -86,6 +86,9 @@ void min_find_test_v1(){
     printf("res=");
     printSPair(res, poly_ring_ctx);
 
+    printf("-----------------------------------------\n");
+
+
     fq_nmod_mpoly_clear(p1, poly_ring_ctx);
     fq_nmod_mpoly_clear(p2, poly_ring_ctx);
     fq_nmod_mpoly_clear(p3, poly_ring_ctx);

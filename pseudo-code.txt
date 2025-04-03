@@ -53,7 +53,71 @@ buchberger(basis):
         B -= (i, j) 
 
 
-reduce(basis, B):
-    flag = true
-    while flag:
+
+select(F, P):
+    i = min_S_poly(P, F)
+    return i
+
+reduce(S, F):
+    return S mod F
+
+insert(f, F):
+    F += f
+
+form(P, F):
+    for i in range(P):
+        if crit(i, len(P), F):
+            P += (i, len(P))
+
+GMI(F, P, h):
+    P' = [(f(i), h) for i in range(len(P))]
+
+    for (f, g) in P:
+        L = lcm(f, g)
+        if lt(h) | L and lcm(h, f) != L and lcm(h, g) != L:
+            P = P\{f, g}
+
+    for (f, h) in P':
+        for (g, h) in P'\{(f, h)}:
+            if lcm(f, h) | lcm(g, h):
+                P' = P'\{(g, h)}
+
+    for (f, h) in P':
+        if gcd(f, h) == 1:
+            P' = P'\{(f, h)}
+
+    F = F + h;
+    P = P + P'
+
+buchberger(F):
+    P = []
+
+    for h in F:
+        GMI(F, h, P)
+
+    while len(P) > 0:
+        pair = Select_min(P)
+        S_poly = S(pair)
+        P = P\pair
+        h = S_poly mod f
+
+        if h != 0:
+            GMI(F, h, P)
+
+
+SRA_buchberger(F):
+    S_poly_buffer = new [buffer_size]
+    P = []
+
+    for h in F:
+        GMI(F, h, P)
+
+    while len(P) > 0:
+        pairs = Select_several_min(P)
+        S_polys = []
+        for pair in pairs:
+            S_polys += S(pair)
         
+        for i in range(S_polys):
+            S_polys[i] = S_polys[i] mod F
+            

@@ -7,6 +7,7 @@
 #include "flint/fq_nmod_mpoly.h" // Кольцо многочленов нескольких переменных над конечным полем
 #include "flint/fmpz.h" //
 #include "flint/ulong_extras.h" // Для randint
+#include "flint/thread_support.h"
 
 // Динамический массив
 #include "glib-2.0/glib.h"
@@ -35,9 +36,21 @@ struct Buchberger_result{
     ulong len;
 };
 
+struct thread_buchberger_data_t{
+    ulong* finished_threads;
+    Polynom S_poly;
+    Basis F;
+    ulong npoli;
+    PolynomRing ctx;
+    int completed;
+};
+
 typedef struct Pair Pair;
 typedef struct SPair SPair;
 typedef struct Buchberger_result Buchberger_result;
+typedef struct thread_buchberger_data_t thread_buchberger_data_t;
+
+extern ulong NO_OF_IRRED;
 
 
 // basis_tools
@@ -62,6 +75,8 @@ void init_SPair(SPair* pspair, PolynomRing ctx);
 void set_SPair(SPair* pspair, Polynom p, ulong first, ulong second, PolynomRing ctx);
 void free_SPair(SPair* pspair, PolynomRing ctx);
 void copy_SPair(SPair* pspair, const SPair* resourse);
+void print_ulong_garray(GArray* g);
+void quick_sort(ulong* arr, int left, int right);
 
 // buchberger
 void LCM(Polynom monom, const Polynom p1, const Polynom p2, const PolynomRing ctx);
@@ -73,6 +88,11 @@ Buchberger_result buchberger(const Basis basis, ulong t, const PolynomRing ctx);
 int is_groebner_basis(Basis basis, ulong len, PolynomRing ctx);
 Buchberger_result buchberger_v2(const Basis basis, ulong t, const PolynomRing ctx);
 Buchberger_result log_buchberger_v2(const Basis basis, ulong t, const PolynomRing ctx);
+Buchberger_result buchberger_v2_1(const Basis basis, ulong t, const PolynomRing ctx);
 int find_min(GArray* P, PolynomRing ctx);
 SPair find_min_v1(GArray* F, GArray* P, PolynomRing ctx);
-int log_find_min(GArray* P, PolynomRing ctx); 
+int log_find_min(GArray* P, PolynomRing ctx);
+
+Buchberger_result threaded_buchberger(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx);
+Buchberger_result log_threaded_buchberger(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx);
+void my_exit(thread_buchberger_data_t* data);
