@@ -45,10 +45,22 @@ struct thread_buchberger_data_t{
     int completed;
 };
 
+struct thread_buchberger_data_v2_t{
+    int executed;
+    int running;
+    int pause;
+    ulong pair;
+    ulong* executed_threads;
+    GArray* F; 
+    Polynom S_poly;
+    PolynomRing ctx;
+};
+
 typedef struct Pair Pair;
 typedef struct SPair SPair;
 typedef struct Buchberger_result Buchberger_result;
 typedef struct thread_buchberger_data_t thread_buchberger_data_t;
+typedef struct thread_buchberger_data_v2_t thread_buchberger_data_v2_t;
 
 extern ulong NO_OF_IRRED;
 
@@ -94,5 +106,6 @@ SPair find_min_v1(GArray* F, GArray* P, PolynomRing ctx);
 int log_find_min(GArray* P, PolynomRing ctx);
 
 Buchberger_result threaded_buchberger(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx);
+Buchberger_result threaded_buchberger_v2(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx);
 Buchberger_result log_threaded_buchberger(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx);
 void my_exit(thread_buchberger_data_t* data);

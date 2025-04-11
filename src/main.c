@@ -38,10 +38,11 @@ void main(int argc, char** argv){
     fq_nmod_ctx_t field_ctx; // Field
     fq_nmod_mpoly_ctx_t poly_ring_ctx; // Ring
     Basis basis;
-    ulong threads_count = 8;
+    ulong threads_count = 4;
+    NO_OF_IRRED = threads_count/2;
 
-    NO_OF_IRRED = 4;
-    printf("%ld\n\n", NO_OF_IRRED);
+    // NO_OF_IRRED = 4;
+    // printf("%ld\n\n", NO_OF_IRRED);
     
     
     fscanf(file, "%ld\n%ld\n%ld\n", &npoli, &p, &nvars);
@@ -69,19 +70,20 @@ void main(int argc, char** argv){
 
     //------------------------------execution------------------------------
     
-    printf("Basis:\n");
-    print_basis(basis, npoli, variables, poly_ring_ctx);
+    // printf("Basis:\n");
+    // print_basis(basis, npoli, variables, poly_ring_ctx);
 
 
-    // Buchberger_result GBasis = buchberger_v2_1(basis, npoli, poly_ring_ctx);
-    Buchberger_result GBasis = threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
+    // Buchberger_result GBasis = thread_b(basis, npoli, poly_ring_ctx);
+    // Buchberger_result GBasis = log_threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
+    Buchberger_result GBasis = threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
 
     printf("Groebner basis:\n");
     print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
 
-    // int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    // if (check == 1) printf("This is Groebner basis :)\n");
-    // else printf("This is not Groebner basis :c\n");
+    int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    if (check == 1) printf("This is Groebner basis :)\n");
+    else printf("This is not Groebner basis :c\n");
 
     // fq_nmod_mpoly_t polynom1;
     // fq_nmod_mpoly_init(polynom1, poly_ring_ctx);
@@ -104,6 +106,8 @@ void main(int argc, char** argv){
     // fq_nmod_mpoly_clear(polynom2, poly_ring_ctx);
 
     
+    // log_buchberger_v2(basis, npoli, poly_ring_ctx);
+
     //------------------------testing------------------------
     struct timespec start, end;
     double summ_time = 0;
@@ -111,7 +115,7 @@ void main(int argc, char** argv){
     for (int i = 0; i < repeats; i++){
         clock_gettime(CLOCK_MONOTONIC, &start);
         // buchberger_v2_1(basis, npoli, poly_ring_ctx);
-        threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
+        threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
         clock_gettime(CLOCK_MONOTONIC, &end);
         summ_time += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
     }

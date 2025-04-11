@@ -1461,7 +1461,6 @@ void find_min_v3(GArray* F, GArray* P, ulong* res, ulong count, PolynomRing ctx)
     fq_nmod_mpoly_clear(lcm_cur, ctx);
     fq_nmod_mpoly_clear(lcm_min_max, ctx);
     g_array_free(min_elems, TRUE);
-//----------------------------------------------------
 }
 
 int check_cond(thread_buchberger_data_t* data){
@@ -1648,6 +1647,32 @@ int find_min_reduction(Basis reminders, ulong n, PolynomRing ctx){
     for (i; i < n; i++){
         if (fq_nmod_mpoly_is_zero(reminders[i], ctx) == 0 & fq_nmod_mpoly_cmp(min, reminders[i], ctx) == 1){
             min = reminders[i];
+            res = i;
+        }
+    }
+
+    return res;
+}
+
+int find_min_reduction_v2(thread_buchberger_data_v2_t* datas, ulong n, PolynomRing ctx){
+    Polynom min;
+    int i = 0;
+    int res = -1;
+    while(i < n){
+        if (datas[i].executed == 1 && fq_nmod_mpoly_is_zero(datas[i].S_poly, ctx) == 0){
+            min = datas[i].S_poly;
+            res = i;
+            i++;
+            break;
+        }
+        i++;
+    }
+
+    // printf("res=%d\n", res);
+
+    for (i; i < n; i++){
+        if ( datas[i].executed == 1 && fq_nmod_mpoly_is_zero(datas[i].S_poly, ctx) == 0 && fq_nmod_mpoly_cmp(min, datas[i].S_poly, ctx) == 1){
+            min = datas[i].S_poly;
             res = i;
         }
     }
@@ -1899,8 +1924,6 @@ Buchberger_result log_threaded_buchberger(const Basis basis, ulong t, ulong thre
     return resres;
 }
 
-
-
 Buchberger_result threaded_buchberger(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx){
     GArray *F, *P;
     Polynom* hp;
@@ -2072,6 +2095,263 @@ Buchberger_result threaded_buchberger(const Basis basis, ulong t, ulong threads_
     free(attrs);
     // fq_nmod_mpoly_clear(S_poly, ctx);
     free(buffer);
+    flint_free(selected_pairs);
+
+    return resres;
+}
+
+void* buchberger_task_v2(void* params){
+    thread_buchberger_data_v2_t* data = (thread_buchberger_data_v2_t*)params;
+    fq_nmod_mpoly_t reminder, lt_f, lt_p, div, mul, cpy;
+    ulong i, isdiv;
+//-------------------------------------------------------------------------------
+    fq_nmod_mpoly_init(reminder, data->ctx);
+    fq_nmod_mpoly_zero(reminder, data->ctx);
+    fq_nmod_mpoly_init(lt_f, data->ctx);
+    fq_nmod_mpoly_init(lt_p, data->ctx);
+    fq_nmod_mpoly_init(div, data->ctx);
+    fq_nmod_mpoly_init(mul, data->ctx);
+    fq_nmod_mpoly_init(cpy, data->ctx);
+//-------------------------------------------------------------------------------
+    while (1){
+        loop1:
+        // printf("%d %d\n", data->running, data->pause);
+        if (data->running == 0) break;
+        if (data->pause == 1) continue;
+
+        // if (data->S_poly == NULL) continue;
+        // print_poly("LOL", data->S_poly, NULL, data->ctx);
+        while (fq_nmod_mpoly_is_zero(data->S_poly, data->ctx) == 0){
+            // print_poly("S_poly:", data->S_poly, NULL, data->ctx);
+            i = 0;
+            isdiv = 0;
+            LT(lt_p, data->S_poly, data->ctx);
+            while((i < data->F->len) && (isdiv==0)){
+                if (*(data->executed_threads) >= NO_OF_IRRED){
+                    data->pause = 1;
+                    goto loop1;
+                }
+                LT(lt_f, g_array_index(data->F, Polynom, i), data->ctx);
+                if (fq_nmod_mpoly_divides(div, lt_p, lt_f, data->ctx) == 1){
+                    fq_nmod_mpoly_mul(mul, div, g_array_index(data->F, Polynom, i), data->ctx);
+                    fq_nmod_mpoly_set(cpy, data->S_poly, data->ctx);
+                    fq_nmod_mpoly_sub(data->S_poly, cpy, mul, data->ctx);
+                    isdiv = 1;
+                } else{
+                    i++;
+                }
+            }
+            if (isdiv == 0){
+                // print_poly("lt_p:", lt_p, NULL, data->ctx);
+                fq_nmod_mpoly_set(cpy, reminder, data->ctx);
+                fq_nmod_mpoly_add(reminder, cpy, lt_p, data->ctx);
+                
+                fq_nmod_mpoly_set(cpy, data->S_poly, data->ctx);
+                fq_nmod_mpoly_sub(data->S_poly, cpy, lt_p, data->ctx);
+            }
+        }
+
+        // print_poly("", reminder, NULL, data->ctx);
+        // printf("YEY\n");
+        fq_nmod_mpoly_set(data->S_poly, reminder, data->ctx);
+        *(data->executed_threads)+=1;
+        // printf("finished_threads=%d\n", *(data->finished_threads));
+        data->executed = 1;
+        data->pause = 1;
+        fq_nmod_mpoly_zero(reminder, data->ctx);
+        
+    }
+//-------------------------------------------------------------------------------
+    fq_nmod_mpoly_clear(reminder, data->ctx);
+    fq_nmod_mpoly_clear(lt_f, data->ctx);
+    fq_nmod_mpoly_clear(lt_p, data->ctx);
+    fq_nmod_mpoly_clear(div, data->ctx);
+    fq_nmod_mpoly_clear(mul, data->ctx);
+    fq_nmod_mpoly_clear(cpy, data->ctx);
+}
+
+Buchberger_result threaded_buchberger_v2(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx){
+    GArray *F, *P;
+    Polynom* hp;
+    Basis S_polys;
+    thread_buchberger_data_v2_t* data;
+    pthread_t* threads;
+    int i, j, k;
+    ulong executed_threads;
+    ulong* selected_pairs;
+    Pair sp;
+    Polynom f, g;
+//--------------------------------------------------------------
+    F = g_array_new(FALSE, FALSE, sizeof(Polynom));
+    P = g_array_new(FALSE, FALSE, sizeof(Pair));
+    S_polys = init_empty_basis(threads_count, ctx);
+    data = flint_calloc(threads_count, sizeof(thread_buchberger_data_v2_t));
+    threads = flint_calloc(threads_count, sizeof(pthread_t));
+    selected_pairs = flint_calloc(threads_count, sizeof(ulong));
+
+    for(i = 0; i < t; i++){
+        Polynom f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+        fq_nmod_mpoly_init(f, ctx);
+        fq_nmod_mpoly_set(f, basis[i], ctx);
+        g_array_append_val(F, f);
+    }
+
+    for(i = 0; i < threads_count; i++){
+        data[i].ctx = ctx;
+        data[i].executed = 0;
+        data[i].executed_threads = &executed_threads;
+        data[i].F = F;
+        data[i].pause = 1;
+        data[i].running = 1;
+        data[i].S_poly = S_polys[i];
+
+        pthread_create(&threads[i], NULL, buchberger_task_v2, &(data[i]));
+    }
+//--------------------------------------------------------------
+    hp = (Polynom*)F->data;
+    for(i = 0; i < F->len; i++){
+        GMI_v2(F, P, *hp, i, ctx);
+        hp++;
+    }
+
+    // print_basis((Basis)F->data, F->len, NULL, ctx);
+
+    while(P->len > 0){
+        // print_basis((Basis)F->data, F->len, NULL, ctx);
+
+        // printf("Pairs:\n");
+        // for(i = 0; i < P->len; i++){
+        //     Pair p = g_array_index(P, Pair, i);
+        //     printf("(%ld, %ld)\n", p.first, p.second);
+        // }
+        // printf("\n");
+
+        find_min_v3(F, P, selected_pairs, threads_count, ctx);
+
+        // printf("Selected pairs:\n");
+        // for(i = 0; i < threads_count; i++){
+        //     if (selected_pairs[i] == -1) continue;
+        //     Pair p = g_array_index(P, Pair, selected_pairs[i]);
+        //     printf("(%ld, %ld)\n", p.first, p.second);
+        // }
+        // printf("\n");
+
+        j = 0;
+        for(i = 0; i < threads_count; i++){
+            k = selected_pairs[i];
+            data[i].executed = 0;
+            if (k != -1){
+                sp = g_array_index(P, Pair, k);
+                f = g_array_index(F, Polynom, sp.first);
+                g = g_array_index(F, Polynom, sp.second);
+                data[i].pair = k;
+                S(S_polys[i], f, g, ctx);
+                j++;
+            }
+        }
+            
+        if (j < threads_count){
+            for(j; j < threads_count; j++)
+                fq_nmod_mpoly_zero(S_polys[j], ctx);
+        }
+
+        // printf("S polys:\n");
+        // for(i = 0; i < threads_count; i++){
+        //     fq_nmod_mpoly_print_pretty(data[i].S_poly, NULL, ctx);
+        //     printf("\n");
+        // }
+        // printf("\n");
+
+        // print_basis((Basis)F->data, F->len, NULL, ctx);
+
+        executed_threads = 0;
+        for(i = 0; i < threads_count; i++){
+            if (selected_pairs[i] == -1) continue;
+            data[i].pause = 0;
+        }
+
+        // fq_nmod_mpoly_t reminder;
+        // Basis Q;
+        // fq_nmod_mpoly_init(reminder, ctx);
+        // Q = init_empty_basis(F->len, ctx);
+        // fq_nmod_mpoly_divrem_ideal(Q, reminder, S_polys[0], (Basis)F->data, F->len, ctx);
+        // printf("remider[0]=");
+        // fq_nmod_mpoly_print_pretty(reminder, NULL, ctx);
+        // printf("\n");
+        // fq_nmod_mpoly_clear(reminder, ctx);
+        // free_basis(Q, F->len, ctx);
+
+        int flag;
+        while(executed_threads < NO_OF_IRRED){
+            flag = 1;
+            for(i = 0; i < threads_count; i++){
+                if (data[i].pause == 0){
+                    flag = 0;
+                    break;
+                }
+            }
+            if (flag == 1) break;
+        }
+
+        // printf("reminders:\n");
+        // for(i = 0; i < threads_count; i++){
+        //     fq_nmod_mpoly_print_pretty(data[i].S_poly, NULL, ctx);
+        //     printf(" executed=%d\n", data[i].executed);
+        // }
+        // printf("\n");
+
+
+        k = find_min_reduction_v2(data, threads_count, ctx);
+        // printf("Selected reminder: ");
+        // if (k != -1)
+        //     fq_nmod_mpoly_print_pretty(data[k].S_poly, NULL, ctx);
+        // else
+        //     printf("k=-1");
+        // printf("\n");
+
+        
+
+        if (k != -1){
+            for(i = 0; i < threads_count; i++){
+                if (data[i].pair == k) continue;
+                if (data[i].executed == 1 && data[i].pair > k) data[i].pair--;
+            }
+            g_array_remove_index(P, selected_pairs[k]);
+            GMI_v2(F, P, S_polys[k], F->len, ctx);
+        }
+
+        for(i = 0; i < threads_count; i++){
+            if (data[i].executed == 1 && fq_nmod_mpoly_is_zero(data[i].S_poly, ctx) == 1){
+                for(j = 0; j < threads_count; j++){
+                    if (i == j) continue;
+                    if (data[j].pair > data[i].pair) data[j].pair--;
+                }
+                Pair p = g_array_index(P, Pair, data[i].pair);
+                // printf("remove pair (%ld, %ld) because S=", p.first, p.second);
+                // fq_nmod_mpoly_print_pretty(data[i].S_poly, NULL, ctx);
+                // printf("\n");
+                printf("index: %ld %d\n", data[i].pair, P->len);
+                g_array_remove_index(P, data[i].pair);
+            }
+        }
+        // printf("\n");
+
+        // sleep(5);
+
+        // break;
+    }
+//--------------------------------------------------------------
+    for(i = 0; i < threads_count; i++){
+        data[i].running = 0;
+        pthread_join(threads[i], NULL);
+    }
+    Basis res = from_garray(F);
+    Buchberger_result resres = {res, F->len};
+    g_array_free(F, TRUE);
+    g_array_free(P, TRUE);
+    free_basis(S_polys, threads_count, ctx);
+    flint_free(data);
+    flint_free(threads);
     flint_free(selected_pairs);
 
     return resres;

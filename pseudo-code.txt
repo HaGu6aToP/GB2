@@ -105,19 +105,84 @@ buchberger(F):
             GMI(F, h, P)
 
 
-SRA_buchberger(F):
-    S_poly_buffer = new [buffer_size]
+struct Data{
+    bool running;
+    bool pause;
+    bool executed;
+    Polynom S_poly;
+    int executed_threads;
+    Basis F;
+}
+
+task(Data data){
+
+    while(data->running){
+        if(data->pause) continue;
+        if(data->executed_threads >= NO_OF_IRRED){
+            data->pause = 1;
+            break;
+        }
+
+        data->S_poly = S mod F;
+
+        data->executed_threads++;
+        data->executed = 1;
+        data->pause = 1;
+    }
+}
+
+threaded_buchberger(F, threads_count):
     P = []
+    threads = new Thread[threads_count]
+    datas = new Data[threads_count]
+    S_polys = new Polynom[threads_count]
+
+    for data in datas:
+        data->executed = 0;
+        data->running = 1;
+        data->pause = 1;
+        data->S_poly = S_polys[i]
+        start_thread(threads[i], task, datas[i])
+
 
     for h in F:
         GMI(F, h, P)
 
+
     while len(P) > 0:
-        pairs = Select_several_min(P)
-        S_polys = []
+        pairs = find_min_pairs(P, threads_count)
+
+        j = 0
         for pair in pairs:
-            S_polys += S(pair)
-        
-        for i in range(S_polys):
-            S_polys[i] = S_polys[i] mod F
+            if pair != -1:
+                datas[j].S_poly = S(P[pair])
+                datas[j].pair = pair;
+                j++;
+
+        for data in datas:
+            if data.pair != -1:
+                data[i].F = F;
+                data[i].executed = 0;
+                data[i].pause = 0;
+
+        while true:
+            if executed_threads > NO_OF_IRRED:
+                break;
+
+        k = find_min_reduction(datas);
+
+        if (k != -1){
+            P -= k;
+            GMI(F, datas[k].S_poly, P)
+        }
+
+        for (i = 0; i < threads_count; i++):
+            if datas[i].executed == 1 and datas[i].S_poly == 0:
+                for(j = 0; j < threads_count; j++)
+                    if j == 1:
+                        continue
+                    if datas[j].pair > datas[i].pair:
+                        datas[j].pair--;
+                P -= P[datas[i].pair]
+
             
