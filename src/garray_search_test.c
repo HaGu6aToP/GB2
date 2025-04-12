@@ -1,4 +1,4 @@
-#include "headers.h"
+#include "buchberger.h"
 
 gint cmpPair(gconstpointer a, gconstpointer b){
     Pair *A = (Pair*)a, *B = (Pair*)b;

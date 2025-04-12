@@ -1,4 +1,4 @@
-#include "headers.h"
+#include "buchberger.h"
 
 #define SMALL_PRIME 7
 

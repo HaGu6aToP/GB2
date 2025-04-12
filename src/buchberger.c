@@ -1,4 +1,6 @@
-#include "headers.h"
+#include "buchberger.h"
+#include "tools.h"
+#include "basis_tools.h"
 
 #include <pthread.h>
 #include <unistd.h>
@@ -1268,7 +1270,6 @@ void GMI_v2(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
     fq_nmod_mpoly_clear(gcd, ctx);
 }
 
-
 Buchberger_result buchberger_v2_1(const Basis basis, ulong t, const PolynomRing ctx){
     GArray *F, *P;
     Polynom* hp;
@@ -2170,6 +2171,150 @@ void* buchberger_task_v2(void* params){
     fq_nmod_mpoly_clear(cpy, data->ctx);
 }
 
+void GMI_v3(GArray* F, GArray* P, const Polynom h, int t, thread_buchberger_data_v2_t* data, int data_len, PolynomRing ctx){
+    GArray* _P;
+    GArray* rem_items;
+    Polynom* ph;
+    Pair* pspair;
+    Polynom f, g;
+    fq_nmod_mpoly_t lcm, div, lt_h, L, lt_f, gcd;
+    int i, j, flag1, flag2, flag3;
+    int flag;
+
+    if (h == NULL){
+        i = 0;
+        while(i < P->len){
+            flag = 0;
+            Pair sp = g_array_index(P, Pair, i);
+            for(j = 0; j < data_len; j++){
+                if (data[j].executed == 1 && fq_nmod_mpoly_is_zero(data[j].S_poly, ctx))
+                    if (cmpPair(&sp, &(data[j].pPair)) == 0){
+                        g_array_remove_index(P, i);
+                        flag = 1;
+                        break;
+                    }
+
+            }
+            if (flag == 1) continue;
+            i++;
+        }
+        return;
+    }
+
+//----------------------------------------------------
+    _P = g_array_new(FALSE, FALSE, sizeof(Pair));
+    rem_items = g_array_new(FALSE, FALSE, sizeof(ulong));
+    fq_nmod_mpoly_init(lcm, ctx);
+    fq_nmod_mpoly_init(div, ctx);
+    fq_nmod_mpoly_init(lt_h, ctx);
+    fq_nmod_mpoly_init(L, ctx);
+    fq_nmod_mpoly_init(lt_f, ctx);
+    fq_nmod_mpoly_init(gcd, ctx);
+
+    LT(lt_h, h, ctx);
+//----------------------------------------------------
+    for(i = 0; i < t; i++){
+        Pair sp = {i, t};
+        g_array_append_val(_P, sp);
+    }
+
+    i = 0;
+    
+    while(i < P->len){
+        Pair sp = g_array_index(P, Pair, i);
+        flag = 0;
+        for(j=0; j<data_len; j++){
+            // print_poly("LOL", data[j].S_poly, NULL, ctx);
+            if (data[j].executed != 1 || fq_nmod_mpoly_is_zero(data[j].S_poly, ctx) != 1) continue;
+            if (cmpPair(&sp, &(data[j].pPair)) == 0){
+                g_array_remove_index(P, i);
+                flag = 1;
+                break;
+            }
+        }
+
+        
+
+        if (flag == 1) continue;
+
+        f = g_array_index(F, Polynom, sp.first);
+        g = g_array_index(F, Polynom, sp.second);
+        LCM(L, f, g, ctx);
+
+        if (fq_nmod_mpoly_divides(div, L, lt_h, ctx) == 1){
+            LCM(lcm, h, f, ctx);
+            if (fq_nmod_mpoly_equal(lcm, L, ctx) == 0){
+                LCM(lcm, h, g, ctx);
+                if (fq_nmod_mpoly_equal(lcm, L, ctx) == 0){
+                    g_array_remove_index(P, i);
+                    i--;
+                }
+            }
+        }
+        i++;
+    }
+
+    i = 0;
+    while(i < _P->len){
+        f = g_array_index(F, Polynom, g_array_index(_P, Pair, i).first);
+        LCM(lcm, f, h, ctx);
+        j = 0;
+        while(j < _P->len){
+            if (i != j){
+                
+                g = g_array_index(F, Polynom, g_array_index(_P, Pair, j).first);
+                LCM(L, g, h, ctx);
+                if (fq_nmod_mpoly_divides(div, L, lcm, ctx) == 1){
+                    g_array_remove_index(_P, j);
+
+                    if (j < i)
+                        i--;
+                }
+            }
+            j++;
+        }
+        i++;
+    }
+
+    i = 0;
+    while(i < _P->len){
+        f = g_array_index(F, Polynom, g_array_index(_P, Pair, i).first);
+        LT(lt_f, f, ctx);
+
+        fq_nmod_mpoly_gcd(gcd, lt_f, lt_h, ctx);
+        if (fq_nmod_mpoly_is_one(gcd, ctx) == 1){
+            g_array_remove_index(_P, i);
+        }
+        else
+            i++;
+    }
+
+    if (t == F->len){
+        Polynom new_poly = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+        fq_nmod_mpoly_init(new_poly, ctx);
+        fq_nmod_mpoly_set(new_poly, h, ctx);
+
+        g_array_append_val(F, new_poly);
+    }
+
+    pspair = (Pair*)_P->data;
+    for(i = 0; i < _P->len; i++){
+        Pair sp = {pspair->first, t};
+        g_array_append_val(P, sp);
+        pspair++;
+    }
+
+//----------------------------------------------------
+    g_array_free(_P, TRUE);
+    g_array_free(rem_items, TRUE);
+    fq_nmod_mpoly_clear(lcm, ctx);
+    fq_nmod_mpoly_clear(div, ctx);
+    fq_nmod_mpoly_clear(lt_h, ctx);
+    fq_nmod_mpoly_clear(L, ctx);
+    fq_nmod_mpoly_clear(lt_f, ctx);
+    fq_nmod_mpoly_clear(gcd, ctx);
+}
+
 Buchberger_result threaded_buchberger_v2(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx){
     GArray *F, *P;
     Polynom* hp;
@@ -2245,6 +2390,7 @@ Buchberger_result threaded_buchberger_v2(const Basis basis, ulong t, ulong threa
                 f = g_array_index(F, Polynom, sp.first);
                 g = g_array_index(F, Polynom, sp.second);
                 data[i].pair = k;
+                data[i].pPair = sp;
                 S(S_polys[i], f, g, ctx);
                 j++;
             }
@@ -2308,32 +2454,54 @@ Buchberger_result threaded_buchberger_v2(const Basis basis, ulong t, ulong threa
         // else
         //     printf("k=-1");
         // printf("\n");
-
         
 
-        if (k != -1){
-            for(i = 0; i < threads_count; i++){
-                if (data[i].pair == k) continue;
-                if (data[i].executed == 1 && data[i].pair > k) data[i].pair--;
-            }
+        // if (k != -1){
+        //     for(i = 0; i < threads_count; i++){
+        //         if (data[i].pair == k) continue;
+        //         if (data[i].executed == 1 && data[i].pair > k) data[i].pair--;
+        //     }
+        //     g_array_remove_index(P, selected_pairs[k]);
+        //     GMI_v3(F, P, S_polys[k], F->len, data, threads_count, ctx);
+        // } else {
+
+        // }
+
+        if (k!=-1){
             g_array_remove_index(P, selected_pairs[k]);
-            GMI_v2(F, P, S_polys[k], F->len, ctx);
+            // printf("LOL\n");
+            GMI_v3(F, P, S_polys[k], F->len, data, threads_count, ctx);
+        } else {
+            GMI_v3(F, P, NULL, F->len, data, threads_count, ctx);
         }
 
-        for(i = 0; i < threads_count; i++){
-            if (data[i].executed == 1 && fq_nmod_mpoly_is_zero(data[i].S_poly, ctx) == 1){
-                for(j = 0; j < threads_count; j++){
-                    if (i == j) continue;
-                    if (data[j].pair > data[i].pair) data[j].pair--;
-                }
-                Pair p = g_array_index(P, Pair, data[i].pair);
-                // printf("remove pair (%ld, %ld) because S=", p.first, p.second);
-                // fq_nmod_mpoly_print_pretty(data[i].S_poly, NULL, ctx);
-                // printf("\n");
-                printf("index: %ld %d\n", data[i].pair, P->len);
-                g_array_remove_index(P, data[i].pair);
-            }
-        }
+
+
+        // g_array_sort(P, cmpPair);
+        // // printf("LOL\n");
+
+        // for(i = 0; i < threads_count; i++){
+        //     if(data[i].executed == 1 && fq_nmod_mpoly_is_zero(data[i].S_poly, ctx) == 1){
+        //         if (g_array_binary_search(P, &(data[i].pPair), cmpPair, &k) == 1)
+        //             g_array_remove_index(P, k);
+        //     }
+        // }
+
+        // for(i = 0; i < threads_count; i++){
+        //     if (data[i].executed == 1 && fq_nmod_mpoly_is_zero(data[i].S_poly, ctx) == 1){
+        //         for(j = 0; j < threads_count; j++){
+        //             if (i == j) continue;
+        //             if (data[j].pair > data[i].pair) data[j].pair--;
+        //         }
+        //         Pair p = g_array_index(P, Pair, data[i].pair);
+        //         // printf("remove pair (%ld, %ld) because S=", p.first, p.second);
+        //         // fq_nmod_mpoly_print_pretty(data[i].S_poly, NULL, ctx);
+        //         // printf("\n");
+        //         printf("index: %ld %d; (%ld, %ld) (%ld, %ld)\n", data[i].pair, P->len, data[i].pPair.first, data[i].pPair.second, p.first, p.second);
+        //         g_array_remove_index(P, data[i].pair);
+        //     }
+        // }
+        
         // printf("\n");
 
         // sleep(5);

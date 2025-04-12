@@ -20,7 +20,7 @@
 
 target = main
 # src = $(wildcard *.c)
-srcnames = main.c tools.c basis_tools.c buchberger.c
+srcnames = main.c tools.c basis_tools.c buchberger.c f4.c
 srcdir = ./src/
 incdir = ./include/
 src = $(addprefix $(srcdir), $(srcnames))
