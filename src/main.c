@@ -32,7 +32,7 @@ void main(int argc, char** argv){
         return;
     }
 
-    ulong npoli; // Polinomials count
+    ulong npoly; // Polinomials count
     ulong nvars; // Variables count
     char buff[BUFFER_SIZE];
     const char** variables;
@@ -48,7 +48,7 @@ void main(int argc, char** argv){
     // printf("%ld\n\n", NO_OF_IRRED);
     
     
-    fscanf(file, "%ld\n%ld\n%ld\n", &npoli, &p, &nvars);
+    fscanf(file, "%ld\n%ld\n%ld\n", &npoly, &p, &nvars);
     fgets(buff, BUFFER_SIZE, file);
 
     // printf("%ld %ld %ld", npoli, p, nvars);
@@ -64,8 +64,8 @@ void main(int argc, char** argv){
     fq_nmod_mpoly_ctx_init(poly_ring_ctx, nvars, order, field_ctx);
 
     // Reading polinomials
-    basis = init_empty_basis(npoli, poly_ring_ctx);
-    read_polinomials(basis, npoli, variables, poly_ring_ctx, file);
+    basis = init_empty_basis(npoly, poly_ring_ctx);
+    read_polinomials(basis, npoly, variables, poly_ring_ctx, file);
 
     fclose(file);
 
@@ -87,20 +87,29 @@ void main(int argc, char** argv){
     // spol(s, f, g, poly_ring_ctx);
     // fq_nmod_mpoly_print_pretty(s, arr_variables, poly_ring_ctx);
     
-    // printf("Basis:\n");
-    // print_basis(basis, npoli, variables, poly_ring_ctx);
+    printf("Basis:\n");
+    print_basis(basis, npoly, variables, poly_ring_ctx);
+
+    F4Result GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
+    printf("Groebner basis:\n");
+    print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
+    int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    if (check == 1) printf("This is Groebner basis :)\n");
+    else printf("This is not Groebner basis :c\n"); 
+
+    printf("\n");
 
 
-    // Buchberger_result GBasis = buchberger_v2_1(basis, npoli, poly_ring_ctx);
+    Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
     // Buchberger_result GBasis = log_threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
     // Buchberger_result GBasis = threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
 
-    // printf("Groebner basis:\n");
-    // print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
+    printf("Groebner basis:\n");
+    print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
 
-    // int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    // if (check == 1) printf("This is Groebner basis :)\n");
-    // else printf("This is not Groebner basis :c\n");
+    check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+    if (check == 1) printf("This is Groebner basis :)\n");
+    else printf("This is not Groebner basis :c\n");
 
     // fq_nmod_mpoly_t polynom1;
     // fq_nmod_mpoly_init(polynom1, poly_ring_ctx);
@@ -151,7 +160,7 @@ void main(int argc, char** argv){
     // printf("CPU time: %ld ms\n", summary_time/repeats);
     
     // ----------------------free resources----------------------
-    free_basis(basis, npoli, poly_ring_ctx);
+    free_basis(basis, npoly, poly_ring_ctx);
     fq_nmod_mpoly_ctx_clear(poly_ring_ctx);
     fq_nmod_ctx_clear(field_ctx);
     free_variables(variables, nvars);

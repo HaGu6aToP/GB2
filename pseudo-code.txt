@@ -186,3 +186,45 @@ threaded_buchberger(F, threads_count):
                 P -= P[datas[i].pair]
 
             
+F4(F):
+    G = copy(F)
+    F_ = copy(F)
+    P = []
+
+    for h in F:
+        GMI(F, h, P)
+
+    while len(P) != 0:
+        Pd = Select(P)
+        P = P\Pd
+        Ld = Projections(Pd)
+        F_ = Reduction(Ld, G)
+        for h in F_:
+            P = P + {Pair(h, g)| g in G}
+            G = G + h
+    return G
+
+Select(P):
+    d = min{deg(p.lcm) | p in P}
+    res = {p in P | deg(p.lcm) = d}
+    return res
+
+Reduction(L, G):
+    F = SymbolicPreprocessing(L, G)
+    F_ = ReductionToRowEchelonForm(F)
+    res = {f in F_ | HM(f) not in HM(F)}
+    return res
+
+SymbolicPreprocessing(L, G):
+    F = {t*f | (t, f) in L}
+    Done = HM(F)
+
+    while M(F) != HM(Done):
+        m = element from M(F) \ Done
+        Done = Done + m
+        
+        for f in G:
+            if m | HM(f):
+                F = F + m/HM(f) * f
+                break
+    return F

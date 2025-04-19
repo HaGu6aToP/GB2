@@ -1,9 +1,13 @@
 #pragma once
 
 #include "headers.h"
+#include "types.h"
 
-typedef fq_nmod_mpoly_struct* Polynom;
-typedef fq_nmod_mpoly_struct** Basis;
-typedef fq_nmod_mpoly_ctx_struct* PolynomRing;
-typedef fq_nmod_ctx_struct* Field;
+struct F4Result{
+    Basis basis;
+    ulong len;
+};
 
+typedef struct F4Result F4Result;
+
+F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx);

@@ -21,6 +21,26 @@ gint cmpPair(gconstpointer a, gconstpointer b){
 }
 
 
+
+ulong max_poly_in_lst(const GArray* g, PolynomRing ctx){
+    Polynom *max, *f;
+    ulong res;
+
+    max = (Polynom*)g->data;
+    res = 0;
+    f = (Polynom*)g->data;
+    f++;
+    for(ulong i = 1; i < g->len; i++){
+        if (fq_nmod_mpoly_cmp(*f, *max, ctx) == 1){
+            res = i;
+            max = f;
+        }
+        f++;
+    }
+    return res;
+}
+
+
 void get_variables(const char** variables, ulong nvars, const char* str){
     ulong var_len = 0;
     char buff[BUFFER_SIZE];
@@ -175,3 +195,149 @@ void quick_sort(ulong *s_arr, int first, int last)
     }
 }
 
+void poly_quick_sort(GArray* g, int first, int last, int rev, const PolynomRing ctx){
+    if (first < last)
+    {
+        int p;
+        if (rev == 0)
+            p = -1;
+        else
+            p = 1;
+        int left = first, right = last;
+        Polynom left_p, right_p;
+        Polynom middle = g_array_index(g, Polynom, (left + right) / 2);
+        do
+        {
+            while(fq_nmod_mpoly_cmp(g_array_index(g, Polynom, left), middle, ctx) == p)
+                left++;
+            while(fq_nmod_mpoly_cmp(g_array_index(g, Polynom, right), middle, ctx) == -p)
+                right--;
+            // while (s_arr[left] < middle) left++;
+            // while (s_arr[right] > middle) right--;
+            
+            if (left <= right)
+            {
+                Polynom tmp = g_array_index(g, Polynom, left);
+                Polynom* l = ((Polynom*)g->data) + left;
+                *l = g_array_index(g, Polynom, right);
+                l = ((Polynom*)g->data) + right;
+                *l = tmp;
+                // int tmp = s_arr[left];
+                // s_arr[left] = s_arr[right];
+                // s_arr[right] = tmp;
+                left++;
+                right--;
+            }
+        } while (left <= right);
+        poly_quick_sort(g, first, right, rev, ctx);
+        poly_quick_sort(g, left, last, rev, ctx);
+    }
+}
+
+ulong sum(ulong* arr, ulong len){
+    ulong res = 0;
+    for(ulong i = 0; i < len; i++){
+        res += arr[i];
+    }
+    return res;
+}
+
+slong poly_binary_search(const GArray* g, const Polynom p, const PolynomRing ctx){
+    slong l = 0;
+    slong r = g->len - 1;
+    slong m;
+    while( r >= l){
+        m = (l + r)/2;
+        if (fq_nmod_mpoly_equal(g_array_index(g, Polynom, m), p, ctx) == 1) return m;
+
+        if (fq_nmod_mpoly_cmp(p, g_array_index(g, Polynom, m), ctx) == -1) r = m - 1;
+        else l = m + 1;
+    }
+    return -1;
+}
+
+int is_poly_in_lst(const GArray* g, const Polynom p, const PolynomRing ctx){
+    Polynom* hp;
+    ulong i;
+    hp = (Polynom*)g->data;
+    for(i = 0; i < g->len; i++){
+        if (fq_nmod_mpoly_equal(p, *hp, ctx) == 1)
+            return 1;
+        hp++;
+    }
+    return 0;
+}
+
+void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx){
+    Polynom* hp;
+    fq_nmod_mpoly_t m;
+    Polynom f;
+
+    fq_nmod_mpoly_init(m, ctx);
+    hp = (Polynom*)g->data;
+
+    for(int i = 0; i < g->len; i++){
+        for(int j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
+            fq_nmod_mpoly_get_term_monomial(m, *hp, j, ctx);
+            if (is_poly_in_lst(res, m, ctx) == 0){
+                f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+                fq_nmod_mpoly_init(f, ctx);
+                fq_nmod_mpoly_set(f, m, ctx);
+                g_array_append_val(res, f);
+            }
+        }
+        hp++;
+    }
+
+    fq_nmod_mpoly_clear(m, ctx);
+}
+
+void head_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx){
+    Polynom* hp;
+    fq_nmod_mpoly_t m;
+    Polynom f;
+
+    fq_nmod_mpoly_init(m, ctx);
+    hp = (Polynom*)g->data;
+
+    for(int i = 0; i < g->len; i++){
+        fq_nmod_mpoly_get_term_monomial(m, *hp, 0, ctx);
+        if (is_poly_in_lst(res, m, ctx) == 0){
+            f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+            fq_nmod_mpoly_init(f, ctx);
+            fq_nmod_mpoly_set(f, m, ctx);
+            g_array_append_val(res, f);
+        }
+        hp++;
+    }
+
+    fq_nmod_mpoly_clear(m, ctx);
+}
+
+void free_poly_lst(GArray* g, PolynomRing ctx){
+    Polynom f;
+    for(ulong i = 0; i < g->len; i++){
+        f = g_array_index(g, Polynom, g->len-1);
+        // printf("%ld\n", f);
+        fq_nmod_mpoly_clear(f, ctx);
+        flint_free(f);
+        g_array_remove_index(g, g->len-1);
+    }
+    g_array_free(g, TRUE);
+}
+
+void print_poly_lst(const GArray* lst, const PolynomRing ctx){
+    if (lst->len == 0){
+        printf("{}\n");
+        return;
+    }
+
+    printf("{ ");
+    for(int i = 0; i < lst->len-1; i++){
+        fq_nmod_mpoly_print_pretty(g_array_index(lst, Polynom, i), NULL, ctx);
+        printf(", ");
+    }
+
+    fq_nmod_mpoly_print_pretty(g_array_index(lst, Polynom, lst->len - 1), NULL, ctx);
+    printf(" }");
+}

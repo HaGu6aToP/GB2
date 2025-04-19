@@ -441,15 +441,15 @@ int is_groebner_basis(Basis basis, ulong len, PolynomRing ctx){
             if (fq_nmod_mpoly_is_zero(S_mod_G, ctx) == 0){
                 
                 // printf("\n\ni----------------------------is_groebner_basis----------------------------\n");
-                // printf("f: ");
-                // fq_nmod_mpoly_print_pretty(f, NULL, ctx);
-                // printf("\ng: ");
-                // fq_nmod_mpoly_print_pretty(g, NULL, ctx);
-                // printf("\nS(f, g): ");
-                // fq_nmod_mpoly_print_pretty(S_polynom, NULL, ctx);
-                // printf("\nS mod G: ");
-                // fq_nmod_mpoly_print_pretty(S_mod_G, NULL, ctx);
-                // printf("\n\n");
+                printf("f: ");
+                fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+                printf("\ng: ");
+                fq_nmod_mpoly_print_pretty(g, NULL, ctx);
+                printf("\nS(f, g): ");
+                fq_nmod_mpoly_print_pretty(S_polynom, NULL, ctx);
+                printf("\nS mod G: ");
+                fq_nmod_mpoly_print_pretty(S_mod_G, NULL, ctx);
+                printf("\n\n");
 
                 free_basis(Q, len, ctx);
                 fq_nmod_mpoly_clear(S_polynom, ctx);
