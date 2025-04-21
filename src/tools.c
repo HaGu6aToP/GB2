@@ -276,6 +276,10 @@ void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx
     fq_nmod_mpoly_init(m, ctx);
     hp = (Polynom*)g->data;
 
+    // printf("-------------------monom_lst_from_poly_lst-------------------------\n");
+    // print_poly_lst(g, ctx);
+    // printf("\n");
+
     for(int i = 0; i < g->len; i++){
         for(int j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
             fq_nmod_mpoly_get_term_monomial(m, *hp, j, ctx);
@@ -316,7 +320,9 @@ void head_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRin
 
 void free_poly_lst(GArray* g, PolynomRing ctx){
     Polynom f;
-    for(ulong i = 0; i < g->len; i++){
+    // printf("%d\n", g->len);
+    ulong len = g->len;
+    for(ulong i = 0; i < len; i++){
         f = g_array_index(g, Polynom, g->len-1);
         // printf("%ld\n", f);
         fq_nmod_mpoly_clear(f, ctx);
@@ -335,7 +341,7 @@ void print_poly_lst(const GArray* lst, const PolynomRing ctx){
     printf("{ ");
     for(int i = 0; i < lst->len-1; i++){
         fq_nmod_mpoly_print_pretty(g_array_index(lst, Polynom, i), NULL, ctx);
-        printf(", ");
+        printf(",\n");
     }
 
     fq_nmod_mpoly_print_pretty(g_array_index(lst, Polynom, lst->len - 1), NULL, ctx);

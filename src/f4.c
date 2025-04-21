@@ -134,7 +134,7 @@ void print_F4Pair(const F4Pair* p, const PolynomRing ctx){
     fq_nmod_mpoly_print_pretty(p->t_g, NULL, ctx);
     printf(", g=");
     fq_nmod_mpoly_print_pretty(p->g, NULL, ctx);
-    printf(" }\n");
+    printf(" }");
 }
 
 void print_F4PairProjection(const F4PairProjection* p, PolynomRing ctx){
@@ -205,13 +205,17 @@ void free_F4Pair_lst(GArray* P, const PolynomRing ctx){
         free_F4Pair(&f4p, ctx);
         g_array_remove_index(P, P->len-1);
     }
+
+    g_array_free(P, TRUE);
 }
 
 void print_F4Pair_lst(const GArray* P, const PolynomRing ctx){
-    for(ulong i = 0; i < P->len; i++){
+    if (P->len == 0) return;
+    for(ulong i = 0; i < P->len-1; i++){
         print_F4Pair(&g_array_index(P, F4Pair, i), ctx);
+        printf("\n");
     }
-    printf("\n");
+    print_F4Pair(&g_array_index(P, F4Pair, P->len-1), ctx);
 }
 
 ulong find_min_deg_in_F4Pairs(const GArray* P, const PolynomRing ctx){
@@ -256,7 +260,6 @@ void F4_select(GArray* Pd, GArray* P, const PolynomRing ctx){
     }
 }
 
-
 void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
     F4Pair f4p;
     Polynom new_poly, f;
@@ -270,13 +273,16 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
     sub = __calloc_poly_lst();
     init_poly(m, ctx);
     init_poly(div, ctx);
+
     while(Pd->len > 0){
         f4p = g_array_index(Pd, F4Pair, Pd->len-1);
         new_poly = __calloc_poly();
+        init_poly(new_poly, ctx);
         fq_nmod_mpoly_mul(new_poly, f4p.t_f, f4p.f, ctx);
         g_array_append_val(F, new_poly);
 
         new_poly = __calloc_poly();
+        init_poly(new_poly, ctx);
         fq_nmod_mpoly_mul(new_poly, f4p.t_g, f4p.g, ctx);
         g_array_append_val(F, new_poly);
 
@@ -308,10 +314,8 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
 
         hp++;
     }
-
 //-------------------------------------------------------
     printf("---------------------------------------preprocessing---------------------------------------\n");
-    
     while(sub->len != 0){
         printf("F:\n");
         print_poly_lst(F, ctx);
@@ -375,22 +379,11 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
 
         // break;
     }
-
-    printf("F:\n");
-    print_poly_lst(F, ctx);
-    printf("\n");
-
-    printf("Done:\n");
-    print_poly_lst(done, ctx);
-    printf("\n");
-    printf("HM(F)\\Done:\n");
-    print_poly_lst(sub, ctx);
-    printf("\n");
-
-    printf("---------------------------------------preprocessing-end---------------------------------------\n");
+    printf("---------------------------------------preprocessing---------------------------------------\n");
 //-------------------------------------------------------
-    free_poly_lst(done, ctx);
+    // g_array_free(sub, TRUE);
     free_poly_lst(sub, ctx);
+    free_poly_lst(done, ctx);
     clear_poly(m, ctx);
     clear_poly(div, ctx);
 }
@@ -401,21 +394,26 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     Polynom *hp, *hg;
     fq_nmod_mpoly_t m, sum, g;
     fq_nmod_mat_t M;
-    fq_nmod_t x;
+    fq_nmod_t x, y;
     ulong i, j, k;
+    slong* p;
+    slong r, p_len, t;
 //-------------------------------------------------------
-    printf("---------------------------------------ref---------------------------------------\n");
     F_monoms = __calloc_poly_lst();
     monom_lst_from_poly_lst(F_monoms, F, ctx);
     init_poly(m, ctx);
     init_poly(sum, ctx);
     init_poly(g, ctx);
-
+    p_len = MAX(F_monoms->len, F->len);
+    p = flint_calloc(p_len, sizeof(slong));
+    for(i = 0; i < p_len; i++)
+        p[i] = i;
 
     poly_quick_sort(F_monoms, 0, F_monoms->len-1, 1, ctx);
 
     fq_nmod_mat_init(M, F->len, F_monoms->len, field);
     fq_nmod_init(x, field);
+    fq_nmod_init(y, field);
 
     hp = (Polynom*)F->data;
     for(i = 0; i < F->len; i++){
@@ -435,46 +433,52 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
         hp++;
     }
 //-------------------------------------------------------
+    printf("---------------------------------------ref---------------------------------------\n");
     printf("F:\n");
     print_poly_lst(F, ctx);
     printf("\n");
     printf("F_monoms:\n");
     print_poly_lst(F_monoms, ctx);
     printf("\n");
+    printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
+    printf("Columns=%d, Lines=%d\n", F_monoms->len, F->len);
     printf("M:\n");
     fq_nmod_mat_print_pretty(M, field);
     printf("\n");
 
-    slong* p = flint_calloc(F_monoms->len, sizeof(slong));
-    for(i = 0; i < F_monoms->len; i++)
-        p[i] = i;
-    slong r;
+    printf("columns ordering: \n");
+    for(i = 0; i < p_len; i++)
+        printf("%ld ", p[i]);
+    printf("\n");
 
-    r = fq_nmod_mat_lu(p, M, 0, field);
+    r = fq_nmod_mat_lu_classical(p, M, 0, field);
+
     printf("new columns ordering: \n");
-    for(i = 0; i < F_monoms->len; i++)
+    for(i = 0; i < p_len; i++)
         printf("%ld ", p[i]);
     printf("\n");
 
     printf("\n");
+    printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
     printf("M LU:\n");
     fq_nmod_mat_print_pretty(M, field);
     printf("\n");
     printf("rank=%ld\n", r);
 
-    fq_nmod_t y;
-    fq_nmod_init(y, field);
-
     // for(i = 0; i < r; i++){
-    //     if (fq_nmod_is_one(fq_nmod_mat_entry(M, i, i), field) == 0) {
+    //     j = i;
+    //     while (fq_nmod_is_zero(fq_nmod_mat_entry(M, i, j), field) == 1) j++;
+    //     if (fq_nmod_is_one(fq_nmod_mat_entry(M, i, j), field) == 1) continue;
 
-    //         fq_nmod_inv(y, fq_nmod_mat_entry(M, i, i), field);
-    //         for(j; j < F_monoms->len; j++){
-    //             if (fq_nmod_is_zero((const fq_nmod_struct*)fq_nmod_mat_entry(M, i, j), field) == 1) continue;
-    //             fq_nmod_mul(x ,y, fq_nmod_mat_entry(M, i, j), field);
-    //             fq_nmod_mat_entry_set(M, i, j, x, field);
-    //         }
+    //     fq_nmod_inv(x, fq_nmod_mat_entry(M, i, j), field);
+    //     fq_nmod_one(fq_nmod_mat_entry(M, i, j), field);
+
+    //     for(j = j+1; j < F_monoms->len; j++){
+    //         if (fq_nmod_is_zero(fq_nmod_mat_entry(M, i, j), field) == 1) continue;
+    //         fq_nmod_mul(y, x, fq_nmod_mat_entry(M, i, j), field);
+    //         fq_nmod_mat_entry_set(M, i, j, y, field);
     //     }
+
     // }
 
     printf("\n");
@@ -483,18 +487,65 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     printf("\n");
 
 
+    // ПЕРЕДЕЛАТЬ НИЖЕ
+
+    // for(i = 0; i < r; i++){
+    //     f = __calloc_poly();
+    //     init_poly(f, ctx);
+    //     // printf("p[%ld]=%ld\n", i, p[i]);
+
+    //     if (F_monoms->len >= F->len){
+    //         t = p[i];
+    //     } else {
+    //         t = i;
+    //     }
+        
+    //     fq_nmod_mpoly_scalar_mul_fq_nmod(f, g_array_index(F_monoms, Polynom, t), (const fq_nmod_struct*)fq_nmod_mat_entry(M, i, i), ctx);
+    //     fq_nmod_mpoly_zero(sum, ctx);
+
+    //     printf("i=%ld:", i);
+
+    //     for(j = i+1; j < F_monoms->len; j++){
+    //         if (fq_nmod_is_zero((const fq_nmod_struct*)fq_nmod_mat_entry(M, i, j), field) == 1) continue;
+    //         if (F_monoms->len >= F->len){
+    //             t = p[j];
+    //         } else {
+    //             t = j;
+    //         }
+
+    //         fq_nmod_mpoly_scalar_mul_fq_nmod(m, g_array_index(F_monoms, Polynom, t), (const fq_nmod_struct*)fq_nmod_mat_entry(M, i, j), ctx);
+    //         fq_nmod_mpoly_add(sum, f, m, ctx);
+    //         set_poly(f, sum, ctx);
+
+    //         printf("j=%ld, p[j]=%ld term=", j, t);
+    //         fq_nmod_mpoly_print_pretty(m, NULL, ctx);
+    //         printf("\n");
+    //     } 
+
+        
+    //     // print_poly("", f, NULL, ctx);
+    //     HC(x, f, ctx);
+    //     if (fq_nmod_is_one(x, field) == 0){
+    //         fq_nmod_inv(y, x, field);
+    //         fq_nmod_mpoly_scalar_mul_fq_nmod(sum, f, y, ctx);
+    //         set_poly(f, sum, ctx);
+    //     }
+    //     g_array_append_val(F_ref, f);
+    // }
+
     for(i = 0; i < r; i++){
         f = __calloc_poly();
         init_poly(f, ctx);
-        
-        fq_nmod_mpoly_scalar_mul_fq_nmod(f, g_array_index(F_monoms, Polynom, p[i]), (const fq_nmod_struct*)fq_nmod_mat_entry(M, i, i), ctx);
-        fq_nmod_mpoly_zero(sum, ctx);
 
-        for(j = i+1; j < F_monoms->len; j++){
-            if (fq_nmod_is_zero((const fq_nmod_struct*)fq_nmod_mat_entry(M, i, j), field) == 1) continue;
-            fq_nmod_mpoly_scalar_mul_fq_nmod(m, g_array_index(F_monoms, Polynom, p[j]), (const fq_nmod_struct*)fq_nmod_mat_entry(M, i, j), ctx);
-            fq_nmod_mpoly_add(sum, f, m, ctx);
-            set_poly(f, sum, ctx);
+        for(j=i; j < F_monoms->len; j++){
+            if (fq_nmod_is_zero(fq_nmod_mat_entry(M, i, j), field) == 1) continue;
+
+            if (F_monoms->len >= F->len) t = p[j]; 
+            else t = j;
+
+            fq_nmod_mpoly_scalar_mul_fq_nmod(m, g_array_index(F_monoms, Polynom, t), fq_nmod_mat_entry(M, i, j), ctx);
+            set_poly(sum, f, ctx);
+            fq_nmod_mpoly_add(f, sum, m, ctx);
         }
 
         g_array_append_val(F_ref, f);
@@ -502,20 +553,18 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
 
     printf("---------------------------------------ref-end---------------------------------------\n");
 //-------------------------------------------------------
-    fq_nmod_clear(y, field);
     free_poly_lst(F_monoms, ctx);
     clear_poly(m, ctx);
     clear_poly(sum, ctx);
     clear_poly(g, ctx);
-    flint_free(p);
-    fq_nmod_mat_clear(M, field);
     fq_nmod_clear(x, field);
-
+    fq_nmod_clear(y, field);
+    fq_nmod_mat_clear(M, field);
+    flint_free(p);
 }
 
 void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const PolynomRing ctx){
     GArray* F;
-    GArray* F_hm;
     GArray* F_ref;
     Polynom *hg;
     Polynom h;
@@ -523,8 +572,7 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
     ulong i, j;
     int flag;
 //-------------------------------------------------------
-    // F = g_array_new(FALSE, FALSE, sizeof(Polynom));
-    F =__calloc_poly_lst();
+    F = __calloc_poly_lst();
     F_ref = __calloc_poly_lst();
     init_poly(f, ctx);
     init_poly(g, ctx);
@@ -535,7 +583,8 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
 
     printf("F:\n");
     print_poly_lst(F, ctx);
-    printf("\nF_ref:\n");
+    printf("\n");
+    printf("F ref:\n");
     print_poly_lst(F_ref, ctx);
     printf("\n");
 
@@ -560,7 +609,6 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
             g_array_remove_index(F_ref, i);
         } else i++;
     }
-
     printf("---------------------------------------reduction-end---------------------------------------\n");
 //-------------------------------------------------------
     free_poly_lst(F, ctx);
@@ -569,7 +617,6 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
     clear_poly(g, ctx);
 }
 
-
 F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx){
     GArray *G, *F_, *P, *Ld, *Pd;
     ulong d;
@@ -577,22 +624,16 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     Polynom f, g, h;
     Polynom* hp;
 //-------------------------------------------------------
-    G = g_array_new(FALSE, FALSE, sizeof(Polynom));
-    F_ = g_array_new(FALSE, FALSE, sizeof(Polynom));
+    G = __calloc_poly_lst();//g_array_new(FALSE, FALSE, sizeof(Polynom));
+    F_ = __calloc_poly_lst();//g_array_new(FALSE, FALSE, sizeof(Polynom));
     P = g_array_new(FALSE, FALSE, sizeof(F4Pair));
     Pd = g_array_new(FALSE, FALSE, sizeof(F4Pair));
-    // Ld = g_array_new(FALSE, FALSE, sizeof(F4PairProjection));
 
     for(i = 0; i < npoly; i++){
-        f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
-        g = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
-        init_poly(f, ctx);
+        g = __calloc_poly();
         init_poly(g, ctx);
-        set_poly(f, F[i], ctx);
         set_poly(g, F[i], ctx);
-
         g_array_append_val(G, g);
-        // g_array_append_val(F_, f);
     }
 
     for(i = 0; i < npoly - 1; i++)
@@ -602,58 +643,81 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
             g_array_append_val(P, p);
         }
 //-------------------------------------------------------
-        while(P->len > 0){
-            printf("G:\n");
-            print_poly_lst(G, ctx);
-            printf("\n");
 
-            printf("P:\n");
-            print_F4Pair_lst(P, ctx);
-            printf("\n");
+    // printf("%d\n", G->len);
+    // printf("G:\n");
+    // print_poly_lst(G, ctx);
+    // printf("\n");
 
-            d = find_min_deg_in_F4Pairs(P, ctx);
-            printf("min deg=%ld\n", d);
+    // printf("P:\n");
+    // print_F4Pair_lst(P, ctx);
+    // printf("\n");
 
-            free_F4Pair_lst(Pd, ctx);
-            F4_select(Pd, P, ctx);
+    // printf("Pd:\n");
+    // print_F4Pair_lst(Pd, ctx);
+    // printf("\n");
+    int counter = 0;
+    while(P->len > 0){
+        // if (counter == 4) break;
 
-            printf("Pd:\n");
-            print_F4Pair_lst(Pd, ctx);
-            printf("P:\n");
-            print_F4Pair_lst(P, ctx);
+        d = find_min_deg_in_F4Pairs(P, ctx);
+        printf("min deg=%ld\n", d);
 
-            reduction(F_, Pd, G, field, ctx);
+        F4_select(Pd, P, ctx);
 
-            printf("F+:\n");
-            print_poly_lst(F_, ctx);
-            printf("\n");
+        printf("Pd:\n");
+        print_F4Pair_lst(Pd, ctx);
+        printf("\nP:\n");
+        print_F4Pair_lst(P, ctx);
+        printf("\n");
 
-            while(F_->len > 0){
-                f = g_array_index(F_, Polynom, F_->len-1);
-                hp = (Polynom*)G->data;
-                for(i = 0; i < G->len; i++){
-                    F4Pair new_pair;
-                    g = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
-                    h = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
-                    init_poly(g, ctx);
-                    init_poly(h, ctx);
-    
-                    set_poly(h, f, ctx);
-                    set_poly(g, *hp, ctx);
-    
-                    init_F4Pair(&new_pair, h, g, ctx);
-    
-                    hp++;
-                }
-                g_array_append_val(G, h);
-                g_array_remove_index(F_, F_->len-1);
+        reduction(F_, Pd, G, field, ctx);
+
+        printf("F+:\n");
+        print_poly_lst(F_, ctx);
+        printf("\n");
+
+        while(F_->len > 0){
+            f = g_array_index(F_, Polynom, F_->len-1);
+            hp = (Polynom*)G->data;
+            for(i = 0; i < G->len; i++){
+                F4Pair new_pair;
+                init_F4Pair(&new_pair, f, *hp, ctx);
+                g_array_append_val(P, new_pair);
+                hp++;
             }
-
-            // break;
-
+            g_array_append_val(G, f);
+            g_array_remove_index(F_, F_->len-1);
         }
+
+        printf("G len: %d\n", G->len);
+        printf("P len: %d\n", P->len);
+        printf("Pd len: %d\n", Pd->len);
+
+        printf("P:\n");
+        print_F4Pair_lst(P, ctx);
+        printf("\n");
+
+        printf("Pd:\n");
+        print_F4Pair_lst(Pd, ctx);
+        printf("\n");
+
+        printf("G:\n");
+        print_poly_lst(G, ctx);
+        printf("\n");
+
+        sleep(5);
+        // counter++;
+    }
 //-------------------------------------------------------
     Basis res = from_garray(G);
     F4Result resres = {res, G->len};
+    // free_poly_lst(G, ctx);
+    g_array_free(G, TRUE);
+    free_poly_lst(F_, ctx);
+    free_F4Pair_lst(P, ctx);
+    free_F4Pair_lst(Pd, ctx);
+    // g_array_free(Pd, TRUE);
+
     return resres;
-    }
+}

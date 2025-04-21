@@ -87,17 +87,17 @@ void main(int argc, char** argv){
     // spol(s, f, g, poly_ring_ctx);
     // fq_nmod_mpoly_print_pretty(s, arr_variables, poly_ring_ctx);
     
-    printf("Basis:\n");
-    print_basis(basis, npoly, variables, poly_ring_ctx);
+    // printf("Basis:\n");
+    // print_basis(basis, npoly, variables, poly_ring_ctx);
 
-    F4Result GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
-    printf("Groebner basis:\n");
-    print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
-    int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    if (check == 1) printf("This is Groebner basis :)\n");
-    else printf("This is not Groebner basis :c\n"); 
+    // F4Result GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
+    // printf("Groebner basis:\n");
+    // print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
+    // int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    // if (check == 1) printf("This is Groebner basis :)\n");
+    // else printf("This is not Groebner basis :c\n"); 
 
-    printf("\n");
+    // printf("\n");
 
 
     Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
@@ -107,9 +107,9 @@ void main(int argc, char** argv){
     printf("Groebner basis:\n");
     print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
 
-    check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
-    if (check == 1) printf("This is Groebner basis :)\n");
-    else printf("This is not Groebner basis :c\n");
+    // check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+    // if (check == 1) printf("This is Groebner basis :)\n");
+    // else printf("This is not Groebner basis :c\n");
 
     // fq_nmod_mpoly_t polynom1;
     // fq_nmod_mpoly_init(polynom1, poly_ring_ctx);
@@ -161,6 +161,8 @@ void main(int argc, char** argv){
     
     // ----------------------free resources----------------------
     free_basis(basis, npoly, poly_ring_ctx);
+    // free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    free_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
     fq_nmod_mpoly_ctx_clear(poly_ring_ctx);
     fq_nmod_ctx_clear(field_ctx);
     free_variables(variables, nvars);
