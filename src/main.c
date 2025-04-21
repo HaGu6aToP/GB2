@@ -90,22 +90,22 @@ void main(int argc, char** argv){
     // printf("Basis:\n");
     // print_basis(basis, npoly, variables, poly_ring_ctx);
 
-    // F4Result GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
-    // printf("Groebner basis:\n");
-    // print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
-    // int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    // if (check == 1) printf("This is Groebner basis :)\n");
-    // else printf("This is not Groebner basis :c\n"); 
+    F4Result GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
+    printf("Groebner basis:\n");
+    print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
+    int check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    if (check == 1) printf("This is Groebner basis :)\n");
+    else printf("This is not Groebner basis :c\n"); 
 
     // printf("\n");
 
 
-    Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
+    // Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
     // Buchberger_result GBasis = log_threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
     // Buchberger_result GBasis = threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
 
-    printf("Groebner basis:\n");
-    print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
+    // printf("Groebner basis:\n");
+    // print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
 
     // check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
     // if (check == 1) printf("This is Groebner basis :)\n");
@@ -138,15 +138,19 @@ void main(int argc, char** argv){
     struct timespec start, end;
     double summ_time = 0;
 
-    // for (int i = 0; i < repeats; i++){
-    //     clock_gettime(CLOCK_MONOTONIC, &start);
-    //     // buchberger_v2_1(basis, npoli, poly_ring_ctx);
-    //     threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
-    //     clock_gettime(CLOCK_MONOTONIC, &end);
-    //     summ_time += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    // }
+    free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    for (int i = 0; i < repeats; i++){
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        // buchberger_v2_1(basis, npoli, poly_ring_ctx);
+        // threaded_buchberger_v2(basis, npoly, threads_count, poly_ring_ctx);
+        GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+        summ_time += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+        if (i % 100 == 0) printf("i=%d\n", i);
+    }
 
-    // printf("Runnig time: %f s\n", summ_time/repeats);
+    printf("Runnig time: %f s\n", summ_time/repeats);
 
     // timeit_t t;
     // slong summary_time = 0;
@@ -162,7 +166,7 @@ void main(int argc, char** argv){
     // ----------------------free resources----------------------
     free_basis(basis, npoly, poly_ring_ctx);
     // free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    free_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+    // free_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
     fq_nmod_mpoly_ctx_clear(poly_ring_ctx);
     fq_nmod_ctx_clear(field_ctx);
     free_variables(variables, nvars);
