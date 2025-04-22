@@ -38,10 +38,10 @@ ldflags = -L/usr/lib/x86_64-linux-gnu \
 		-lmpfr -lflint -lgmp -lglib-2.0
 
 $(target) : $(obj)
-	gcc $(obj) -o$(target) $(ldflags)
+	g++ $(obj) -o$(target) $(ldflags)
 
 %.o : %.c 
-	gcc -c $< -o $@ $(cflags) 
+	g++ -xc -c $< -o $@ $(cflags) 
 
 clean : 
 	rm $(target) *.o

@@ -1226,6 +1226,8 @@ void GMI_v2(GArray* F, GArray* P, const Polynom h, int t, PolynomRing ctx){
 
                     if (j < i)
                         i--;
+
+                    continue;
                 }
             }
             j++;
