@@ -1,5 +1,10 @@
 #pragma once
 #include "headers.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "types.h" 
 
 #define BUFFER_SIZE 1024
@@ -29,3 +34,7 @@ void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx
 void free_poly_lst(GArray* g, PolynomRing ctx);
 void head_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx);
 void print_poly_lst(const GArray* lst, const PolynomRing ctx);
+
+#ifdef __cplusplus
+}
+#endif

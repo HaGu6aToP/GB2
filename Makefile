@@ -18,30 +18,72 @@
 # start: tools basis_tools main
 # 	gcc tools.o basis_tools.o main.o -omain
 
+
+# target = main
+# # src = $(wildcard *.c)
+# srcnames = main.c tools.c basis_tools.c buchberger.c f4.c
+# srcdir = ./src/
+# incdir = ./include/
+# src = $(addprefix $(srcdir), $(srcnames))
+# obj = $(patsubst %.c, %.o, $(src))
+
+# cflags = -I/usr/lib/x86_64-linux-gnu/glib-2.0/include \
+# 		-I/usr/include/glib-2.0 \
+# 		-I/usr/include/x86_64-linux-gnu/flint \
+# 		-I/usr/code/GB2 \
+# 		-I./include/ \
+
+# ldflags = -L/usr/lib/x86_64-linux-gnu \
+# 		-lmpfr -lflint -lgmp -lglib-2.0
+
+# $(target) : $(obj)
+# 	g++ $(obj) -o$(target) $(ldflags)
+
+# %.o : %.c 
+# 	g++ -xc -c $< -o $@ $(cflags) 
+
+# clean : 
+# 	rm $(target) *.o
+
+
+# Определение цели
 target = main
-# src = $(wildcard *.c)
-srcnames = main.c tools.c basis_tools.c buchberger.c f4.c
+
+# Получение списка исходных файлов C и C++
+src_c =  $(wildcard ./src/*.c)
+src_cpp = $(wildcard ./src/*.cpp)
+srcnames = $(notdir $(src_c)) $(notdir $(src_cpp))
 srcdir = ./src/
 incdir = ./include/
 src = $(addprefix $(srcdir), $(srcnames))
-obj = $(patsubst %.c, %.o, $(src))
 
+# Получение списка объектных файлов
+obj_c = $(patsubst %.c, %.o, $(src_c))
+obj_cpp = $(patsubst %.cpp, %.o, $(src_cpp))
+obj = $(obj_c) $(obj_cpp)
 
-
+# Флаги компиляции
 cflags = -I/usr/lib/x86_64-linux-gnu/glib-2.0/include \
 		-I/usr/include/glib-2.0 \
 		-I/usr/include/x86_64-linux-gnu/flint \
 		-I/usr/code/GB2 \
-		-I./include/
+		-I../SparseRREFF \
+		-I$(incdir)
 
+# Флаги линковки
 ldflags = -L/usr/lib/x86_64-linux-gnu \
 		-lmpfr -lflint -lgmp -lglib-2.0
 
+# Правила компиляции
 $(target) : $(obj)
-	g++ $(obj) -o$(target) $(ldflags)
+	g++ $(obj) -o $(target) $(ldflags)
 
-%.o : %.c 
-	g++ -xc -c $< -o $@ $(cflags) 
+%.o : %.cpp
+	g++ -fpermissive -c $< -o $@ $(cflags)
 
-clean : 
-	rm $(target) *.o
+%.o : %.c
+	g++ -fpermissive -c $< -o $@ $(cflags)
+
+# Правило для очистки
+clean:
+	rm -f $(target) $(obj)

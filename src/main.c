@@ -17,10 +17,10 @@
 //  x y z
 //  x^3*y^2 - x^2*y^3 + x
 //  3*x^4*y + y^2
-void main(int argc, char** argv){
+int main(int argc, char** argv){
     if (argc == 0){
         printf("Not enought parameters\n");
-        return;
+        return 1;
     }
 
     char* file_name = argv[1];
@@ -29,7 +29,7 @@ void main(int argc, char** argv){
     FILE* file;
     if ((file = fopen(file_name, "r")) == NULL){
         printf("Failed to open file\n");
-        return;
+        return 2;
     }
 
     ulong npoly; // Polinomials count
@@ -172,4 +172,5 @@ void main(int argc, char** argv){
     fq_nmod_ctx_clear(field_ctx);
     free_variables(variables, nvars);
     
+    return 0;
 }

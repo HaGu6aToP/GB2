@@ -3,11 +3,15 @@
 #include "headers.h"
 #include "types.h"
 
-struct F4Result{
-    Basis basis;
-    ulong len;
-};
+extern "C"{
 
-typedef struct F4Result F4Result;
+    struct F4Result{
+        Basis basis;
+        ulong len;
+    };
 
-F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx);
+    typedef struct F4Result F4Result;
+
+    F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx);
+
+}

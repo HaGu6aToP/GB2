@@ -1,4 +1,5 @@
 #pragma once
+
 #include "headers.h"
 
 typedef fq_nmod_mpoly_struct* Polynom;

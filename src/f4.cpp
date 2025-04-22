@@ -1,8 +1,10 @@
 #include "f4.h"
-#include "tools.h"
-#include "basis_tools.h"
 #include <unistd.h>
 #include "flint/fq_nmod_mat.h"
+
+#include "tools.h"
+#include "basis_tools.h"
+
 
 #define HM(res, f, ctx) fq_nmod_mpoly_get_term_monomial(res, f, 0, ctx)
 #define HT(res, f, ctx) fq_nmod_mpoly_get_term(res, f, 0, ctx)
@@ -11,7 +13,7 @@
 #define init_poly(f, ctx) fq_nmod_mpoly_init(f, ctx)
 #define clear_poly(f, ctx) fq_nmod_mpoly_clear(f, ctx)
 #define set_poly(res, f, ctx) fq_nmod_mpoly_set(res, f, ctx)
-
+ 
 struct sparse_matrix{
     GArray *aelem; //fq_nmod_struct
     GArray *jptr; //ulong
@@ -381,6 +383,7 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
     init_poly(m, ctx);
     init_poly(div, ctx);
 
+    // Формируем *S-пары*
     while(Pd->len > 0){
         f4p = g_array_index(Pd, F4Pair, Pd->len-1);
         new_poly = __calloc_poly();
@@ -423,6 +426,8 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
     }
 //-------------------------------------------------------
     // printf("---------------------------------------preprocessing---------------------------------------\n");
+    
+    // Добавляем новые полиномы до тех пор, пока для каждого монома из T(F) не найдется полином f из F для котрого он ведущий
     while(sub->len != 0){
         // printf("F:\n");
         // print_poly_lst(F, ctx);
@@ -446,7 +451,7 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
 
         g_array_append_val(done, f);
         g_array_remove_index(sub, k);
-
+        
         hp = (Polynom*)G->data;
         for(i = 0; i < G->len; i++){
             HM(m, *hp, ctx);
@@ -575,7 +580,7 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
 //     free_sparse_matrix(&SM, field);
 // }
 
-// Приведение системы F
+
 void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
     GArray* F_monoms;
     Polynom f;
@@ -603,6 +608,8 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     fq_nmod_init(x, field);
     fq_nmod_init(y, field);
 
+
+    // Формируем матрицу 
     hp = (Polynom*)F->data;
     for(i = 0; i < F->len; i++){
         for(j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
@@ -639,6 +646,7 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     //     printf("%ld ", p[i]);
     // printf("\n");
 
+    // Приводим к верхне треугольней форме с помощью LU разложения
     p[p_len - 1] = -1;
     r = fq_nmod_mat_lu_classical(p, M, 0, field);
 
@@ -659,6 +667,7 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     // fq_nmod_mat_print_pretty(M, field);
     // printf("\n");
 
+    // Получаем редуцированные полиномы
     for(i = 0; i < r; i++){
         f = __calloc_poly();
         init_poly(f, ctx);
@@ -689,7 +698,7 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     flint_free(p);
 }
 
-// Редуцирование системы 
+ 
 void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const PolynomRing ctx){
     GArray* F;
     GArray* F_ref;
@@ -705,7 +714,9 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
     init_poly(g, ctx);
 //-------------------------------------------------------
     // printf("---------------------------------------reduction---------------------------------------\n");
+    // Формирование "матрицы" F 
     preprocessing(F, Pd, G, ctx);
+    // Приведение "матрицы" к верхне треугольному виду 
     ref(F_ref, F, field, ctx);
 
     // printf("F:\n");
@@ -715,6 +726,7 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
     // print_poly_lst(F_ref, ctx);
     // printf("\n");
 
+    // Выбираем полиномы для добавления в базис
     i = 0;
     while(i < F_ref->len){
         h = g_array_index(F_ref, Polynom, i);
@@ -845,7 +857,7 @@ void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomR
     clear_poly(hm_h, ctx);
 }
 
-F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx){
+extern "C" F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx){
     GArray *G; // Строящийся базис гребнера
     GArray *F_; // Новые полиномы добавляемые в базис
     GArray *P; // Критические пары
@@ -915,7 +927,7 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
             // Добавляем новые критические пары
             F4_GMI(P, G, f, G->len, ctx);
 
-            // Добавляем новые полиномы в базис
+            // Добавляем новый полином в базис
             g_array_append_val(G, f);
             g_array_remove_index(F_, F_->len-1);
         }
