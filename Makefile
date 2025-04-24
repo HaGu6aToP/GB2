@@ -67,7 +67,6 @@ cflags = -I/usr/lib/x86_64-linux-gnu/glib-2.0/include \
 		-I/usr/include/glib-2.0 \
 		-I/usr/include/x86_64-linux-gnu/flint \
 		-I/usr/code/GB2 \
-		-I../SparseRREFF \
 		-I$(incdir)
 
 # Флаги линковки
@@ -76,13 +75,13 @@ ldflags = -L/usr/lib/x86_64-linux-gnu \
 
 # Правила компиляции
 $(target) : $(obj)
-	g++ $(obj) -o $(target) $(ldflags)
+	g++ $(obj) -std=c++20 -o $(target) $(ldflags)
 
 %.o : %.cpp
-	g++ -fpermissive -c $< -o $@ $(cflags)
+	g++ -fpermissive -std=c++20 -c $< -o $@ $(cflags)
 
 %.o : %.c
-	g++ -fpermissive -c $< -o $@ $(cflags)
+	gcc -c $< -o $@ $(cflags)
 
 # Правило для очистки
 clean:

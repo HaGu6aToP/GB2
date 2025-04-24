@@ -3,7 +3,9 @@
 #include "headers.h"
 #include "types.h"
 
-extern "C"{
+#ifdef __cplusplus
+extern "C" {
+#endif
 
     struct F4Result{
         Basis basis;
@@ -14,4 +16,6 @@ extern "C"{
 
     F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx);
 
+#ifdef __cplusplus
 }
+#endif

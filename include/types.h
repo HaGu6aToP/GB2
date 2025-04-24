@@ -15,7 +15,7 @@ struct Pair{
 struct SPair{
     Polynom poly;
     ulong first;
-    ulong second;
+    ulong second; 
 };
 
 struct Buchberger_result{
