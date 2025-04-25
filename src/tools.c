@@ -319,15 +319,21 @@ void head_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRin
 }
 
 void free_poly_lst(GArray* g, PolynomRing ctx){
-    Polynom f;
+    // Polynom f;
     // printf("%d\n", g->len);
-    ulong len = g->len;
-    for(ulong i = 0; i < len; i++){
-        f = g_array_index(g, Polynom, g->len-1);
-        // printf("%ld\n", f);
-        fq_nmod_mpoly_clear(f, ctx);
-        flint_free(f);
-        g_array_remove_index(g, g->len-1);
+    // ulong len = g->len;
+    // for(ulong i = 0; i < len; i++){
+    //     f = g_array_index(g, Polynom, g->len-1);
+    //     // printf("%ld\n", f);
+    //     fq_nmod_mpoly_clear(f, ctx);
+    //     flint_free(f);
+    //     g_array_remove_index(g, g->len-1);
+    // }
+    // g_array_free(g, TRUE);
+    Polynom* pf = (Polynom*)g->data;
+    for(ulong i = 0; i < g->len; i++) {
+        fq_nmod_mpoly_clear(pf[i], ctx);
+        flint_free(pf[i]);
     }
     g_array_free(g, TRUE);
 }
