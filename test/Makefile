@@ -20,10 +20,10 @@
 
 target = test
 # src = $(wildcard *.c)
-srcnames = tools.c basis_tools.c buchberger.c
+srcnames = tools.c basis_tools.c buchberger.c sparse_matrix.c
 srcdir = ../src/
 incdir = /usr/code/GB2/include/
-src = $(addprefix $(srcdir), $(srcnames)) min_find_test.c thread_test.c main.c
+src = $(addprefix $(srcdir), $(srcnames)) min_find_test.c thread_test.c main.c sparse_matrix_test.c
 obj = $(patsubst %.c, %.o, $(src))
 
 

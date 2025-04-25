@@ -506,26 +506,38 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     // printf("\n");
 
     sparse_matrix_t sparse_M;
-    sparse_matrix_init(sparse_M, 4, 5);
+    sparse_matrix_init(sparse_M, 4, 5, field);
 
-    sparse_matrix_add_elem(sparse_M, 0, 2, 1);
-    sparse_matrix_add_elem(sparse_M, 2, 1, 1);
-    sparse_matrix_add_elem(sparse_M, 2, 3, 1);
-    sparse_matrix_add_elem(sparse_M, 3, 3, 6);
-    sparse_matrix_add_elem(sparse_M, 3, 4, 1);
-    sparse_matrix_add_elem(sparse_M, 0, 0, 1);
-    sparse_matrix_add_elem(sparse_M, 1, 0, 1);
-    sparse_matrix_add_elem(sparse_M, 1, 1, 1);
     
 
-    sparse_matrix_print(sparse_M);
-    printf("\n");
+    // sparse_matrix_add_elem(sparse_M, 0, 2, 1);
+    // sparse_matrix_add_elem(sparse_M, 2, 1, 1);
+    // sparse_matrix_add_elem(sparse_M, 2, 3, 1);
+    // sparse_matrix_add_elem(sparse_M, 3, 3, 6);
+    // sparse_matrix_add_elem(sparse_M, 3, 4, 1);
+    // sparse_matrix_add_elem(sparse_M, 0, 0, 1);
+    // sparse_matrix_add_elem(sparse_M, 1, 0, 1);
+    // sparse_matrix_add_elem(sparse_M, 1, 1, 1);
+    
+    // sparse_matrix_print_info(sparse_M);
+    // printf("\n\n");
+    // sparse_matrix_print_pretty(sparse_M);
+    // printf("\n");
 
-    sparse_matrix_print_pretty(sparse_M);
-    printf("\n");
+    // sparse_matrix_print(sparse_M);
+    // printf("\n");
+    // sparse_matrix_swap_columns(sparse_M, 0, 3);
+    // sparse_matrix_swap_columns(sparse_M, 1, 4);
+    // // sparse_matrix_canonize(sparse_M);
+    // sparse_matrix_print(sparse_M);
+    // printf("\n");
 
-    sparse_matrix_print(sparse_M);
-    printf("\n");
+    // sparse_matrix_print_pretty(sparse_M);
+    // printf("\n");
+    // sparse_matrix_print_info(sparse_M);
+    // printf("\n\n");
+    
+
 
     // sparse_matrix_rem_item(sparse_M, 1, 1);
  
@@ -592,6 +604,7 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
 //         }
 //         hp++;
 //     }
+//     printf("%d, %d\n", F->len, F_monoms->len);
 // //-------------------------------------------------------
 //     // printf("---------------------------------------ref---------------------------------------\n");
 //     // printf("F:\n");

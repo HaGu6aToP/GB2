@@ -1,4 +1,5 @@
 #include "headers.h"
+#include "types.h"
 
 struct Entry{
     ulong i;
@@ -11,8 +12,11 @@ struct sparse_matrix_struct{
     ulong lines;
     ulong columns;
     ulong size;
+    ulong* l_ind;
+    ulong* c_ind;
     int main; // 0 - lines, 1 - columns
     int canonized;
+    Field ctx;
 };
 
 
@@ -22,10 +26,15 @@ typedef struct sparse_matrix_struct sparse_matrix_struct;
 typedef sparse_matrix_struct sparse_matrix_t[1];
 
 
-void sparse_matrix_init(sparse_matrix_struct* m, ulong lines, ulong columns);
+void sparse_matrix_init(sparse_matrix_struct* m, ulong lines, ulong columns, Field ctx);
 void sparse_matrix_clear(sparse_matrix_struct* m);
-void sparse_matrix_add_elem(sparse_matrix_struct* M, ulong line, ulong column, ulong data);
+void sparse_matrix_add_elem_fq_nmod(sparse_matrix_struct* m, ulong line, ulong column, fq_nmod_struct* val);
+void sparse_matrix_add_elem_ui(sparse_matrix_struct* m, ulong line, ulong column, ulong val);
 void sparse_matrix_print(const sparse_matrix_struct* m);
 void sparse_matrix_rem_item(sparse_matrix_struct* m, ulong i, ulong j);
 void sparse_matrix_canonize(sparse_matrix_struct* m);
 void sparse_matrix_print_pretty(sparse_matrix_struct* m);
+void sparse_matrix_swap_columns(sparse_matrix_struct* m, ulong first, ulong second);
+void sparse_matrix_swap_lines(sparse_matrix_struct* m, ulong first, ulong second);
+void sparse_mattrix_add_line(sparse_matrix_struct* m, ulong line, ulong added_line, ulong coeff);
+void sparse_matrix_print_info(const sparse_matrix_struct* m);
