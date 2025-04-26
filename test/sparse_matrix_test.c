@@ -217,16 +217,76 @@ void sparse_matrix_test(){
     sparse_matrix_print(sparse_M);
     printf("\n");
 
-    printf("reduction:\n");
-    sparse_matrix_gauss_retucion(sparse_M);
+    // row echelon form
+    // 1 0 0
+    // 0 1 0
+    // 0 0 1
+    printf("gauss ref:\n");
+    sparse_matrix_gauss_ref(sparse_M);
 
     sparse_matrix_print_info(sparse_M);
     printf("\n\n");
     sparse_matrix_print_pretty(sparse_M);
     printf("\n");
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
     sparse_matrix_print(sparse_M);
     printf("\n");
 
+    // sparse_matrix_add_line_mul_ui(sparse_M, 3, 0, 5);
+
+    // sparse_matrix_print_info(sparse_M);
+    // printf("\n\n");
+    // sparse_matrix_print_pretty(sparse_M);
+    // printf("\n");
+    // sparse_matrix_print_info(sparse_M);
+    // printf("\n\n");
+    // sparse_matrix_print(sparse_M);
+    // printf("\n");
+
+    sparse_matrix_clear(sparse_M);
+
+// 1, 0, 0, 0, 0, 0, 0, 1, 1, 4, 0, 0
+// 1, 6, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0
+// 0, 1, 6, 1, 1, 1, 4, 0, 0, 0, 0, 0
+// 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 6, 2
+
+    sparse_matrix_init(sparse_M, 4, 12, field);
+
+    sparse_matrix_add_elem_ui(sparse_M, 0, 0, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 0, 7, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 0, 8, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 0, 9, 4);
+    
+    sparse_matrix_add_elem_ui(sparse_M, 1, 0, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 1, 1, 6);
+    sparse_matrix_add_elem_ui(sparse_M, 1, 3, 2);
+    
+    sparse_matrix_add_elem_ui(sparse_M, 2, 1, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 2, 2, 6);
+    sparse_matrix_add_elem_ui(sparse_M, 2, 3, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 2, 4, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 2, 5, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 2, 6, 4);
+
+    sparse_matrix_add_elem_ui(sparse_M, 3, 5, 1);
+    sparse_matrix_add_elem_ui(sparse_M, 3, 10, 6);
+    sparse_matrix_add_elem_ui(sparse_M, 3, 11, 2);
+
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+
+    printf("gauss ref:\n");
+    sparse_matrix_gauss_ref(sparse_M);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
 
     sparse_matrix_clear(sparse_M);
     fq_nmod_ctx_clear(field);
