@@ -67,8 +67,8 @@ void sparse_matrix_test(){
     printf("\n\n");
     sparse_matrix_print_pretty(sparse_M);
     printf("\n");
-    // sparse_matrix_print(sparse_M);
-    // printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
 
     printf("add to line 1 line 0\n");
     sparse_matrix_add_line_mul_ui(sparse_M, 1, 0, 1);
@@ -136,13 +136,25 @@ void sparse_matrix_test(){
     sparse_matrix_print_pretty(sparse_M);
     printf("\n");
 
-    printf("swap columns: (0, 1), (1, 2)\n");
+    printf("swap columns: (0, 1)\n");
     sparse_matrix_swap_columns(sparse_M, 0, 1);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+    
+
+    printf("swap columns: (1, 2)\n");
     sparse_matrix_swap_columns(sparse_M, 1, 2);
 
     sparse_matrix_print_info(sparse_M);
     printf("\n\n");
     sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print(sparse_M);
     printf("\n");
     
     
@@ -204,6 +216,17 @@ void sparse_matrix_test(){
     printf("\n");
     sparse_matrix_print(sparse_M);
     printf("\n");
+
+    printf("reduction:\n");
+    sparse_matrix_gauss_retucion(sparse_M);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+
 
     sparse_matrix_clear(sparse_M);
     fq_nmod_ctx_clear(field);

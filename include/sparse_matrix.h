@@ -41,4 +41,4 @@ void sparse_matrix_add_line_mul_fq_nmod(sparse_matrix_struct* m, ulong line, ulo
 void sparse_matrix_mul_line_ui(sparse_matrix_struct* m, ulong i, ulong coeff);
 void sparse_matrix_mul_line_fq_nmod(sparse_matrix_struct* m, ulong i, fq_nmod_struct* coeff);
 void sparse_matrix_print_info(const sparse_matrix_struct* m);
-void spatse_matrix_gauss_retucion(sparse_matrix_struct* m);
+ulong sparse_matrix_gauss_retucion(sparse_matrix_struct* m);

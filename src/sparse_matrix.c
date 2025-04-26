@@ -30,6 +30,7 @@ slong __find_ind(ulong* mas, ulong size, ulong val){
     return res;
 }
 
+// temporarily only line-main case
 void sparse_matrix_init(sparse_matrix_struct* m, ulong lines, ulong columns, Field ctx){
 
     m->lines = lines;
@@ -46,13 +47,19 @@ void sparse_matrix_init(sparse_matrix_struct* m, ulong lines, ulong columns, Fie
     for(i = 0; i < columns; i++)
         m->c_ind[i] = i;
 
-    if (lines <= columns){
-        m->size = lines;
-        m->main = 0;
-    } else {
-        m->size = columns;
-        m->main = 1;
-    }
+    
+    // remove later
+    m->size = lines;
+    m->main = 0;
+
+    // if (lines <= columns){
+    //     m->size = lines;
+    //     m->main = 0;
+    // } else {
+    //     m->size = columns;
+    //     m->main = 1;
+    // }
+
     
     m->canonized = 0;
     m->sm = flint_calloc(m->size, sizeof(GArray*));
@@ -179,8 +186,15 @@ void __sparse_matrix_mas_canonize(sparse_matrix_struct* m, sparse_matrix_pair* m
     if (size == 0) return;
 
     ulong* ind;
-    if (m->main == 0) ind = m->c_ind;
-    else ind = m->l_ind;
+    ulong ind_size;
+    if (m->main == 0){
+        ind = m->c_ind;
+        ind_size = m->columns;
+    }
+    else{
+        ind = m->l_ind;
+        ind_size = m->lines;
+    }
 
     slong i = 0;
     slong j = size - 1;
@@ -192,8 +206,11 @@ void __sparse_matrix_mas_canonize(sparse_matrix_struct* m, sparse_matrix_pair* m
         // printf("%ld %ld\n", mas[i].first, mid.first);
         // printf("%ld %ld\n", ind[mas[i].first], ind[mid.first]);
 
-        while(ind[mas[i].k] < ind[mid.k]) i++;
-        while(ind[mas[j].k] > ind[mid.k]) j--;
+        // while(ind[mas[i].k] < ind[mid.k]) i++;
+        // while(ind[mas[j].k] > ind[mid.k]) j--;
+        while(__find_ind(ind, ind_size, mas[i].k) < __find_ind(ind, ind_size, mid.k)) i++;
+        while(__find_ind(ind, ind_size, mas[j].k) > __find_ind(ind, ind_size, mid.k)) j--;
+
 
         // printf("final: %ld %ld\n", ind[mas[i].first], ind[mid.first]);
         // printf("i=%ld j=%ld\n\n", i, j);
@@ -222,11 +239,19 @@ int __is_already_mas_canonized(sparse_matrix_struct* m, sparse_matrix_pair* mas,
     if (size == 0) return 1;
 
     ulong* ind;
-    if (m->main == 0) ind = m->c_ind;
-    else ind = m->l_ind;
+    ulong ind_size;
+    if (m->main == 0){
+        ind = m->c_ind;
+        ind_size = m->columns;
+    }
+    else{
+        ind = m->l_ind;
+        ind_size = m->lines;
+    }
 
     for(ulong i = 0; i < size-1; i++){
-        if (ind[mas[i].k] > ind[mas[i+1].k]) return 0;
+        // if (ind[mas[i].k] > ind[mas[i+1].k]) return 0;
+        if (__find_ind(ind, ind_size, mas[i].k) > __find_ind(ind, ind_size, mas[i+1].k)) return 0;
     }
 
     return 1;
@@ -236,8 +261,8 @@ int __is_already_mas_canonized(sparse_matrix_struct* m, sparse_matrix_pair* mas,
 void sparse_matrix_canonize(sparse_matrix_struct* m){
     for(ulong k = 0; k < m->size; k++){
         // printf("line: %ld\n", k);
-        // printf("already canonized: %d\n", __is_already_mas_canonized(m, (Pair*)m->sm[k]->data, m->sm[k]->len));
-        if (__is_already_mas_canonized(m, (sparse_matrix_pair*)m->sm[k]->data, m->sm[k]->len) == 1) continue;
+        // printf("already canonized: %d\n", __is_already_mas_canonized(m,  (sparse_matrix_pair*)m->sm[k]->data, m->sm[k]->len));
+        // if (__is_already_mas_canonized(m, (sparse_matrix_pair*)m->sm[k]->data, m->sm[k]->len) == 1) continue;
         __sparse_matrix_mas_canonize(m, (sparse_matrix_pair*)(m->sm[k]->data), m->sm[k]->len);
     }
     m->canonized = 1;
@@ -257,7 +282,8 @@ void sparse_matrix_print_pretty(sparse_matrix_struct* m){
             k = 0;
             p = (sparse_matrix_pair*)m->sm[m->l_ind[i]]->data;
             for(ulong j = 0; j < m->sm[m->l_ind[i]]->len; j++){
-                while (k < m->c_ind[p->k]){
+                //m->c_ind[k] < p->k
+                while (k < __find_ind(m->c_ind, m->columns, p->k)){
                     printf("0 ");
                     k++;
                 }
@@ -294,7 +320,9 @@ void sparse_matrix_print_pretty(sparse_matrix_struct* m){
                 }
                 else{
                     p = g_array_index(m->sm[l], sparse_matrix_pair, curr_ind[l]);
-                    if (m->l_ind[p.k] > i) {
+                    // m->l_ind[p.k] > i
+                    // __find_ind(m->l_ind, m->lines, p.k) > i
+                    if (__find_ind(m->l_ind, m->lines, p.k) > i) {
                         printf("0 ");
                         continue;
                     }
@@ -333,7 +361,8 @@ void sparse_matrix_swap_columns(sparse_matrix_struct* m, ulong first, ulong seco
     m->c_ind[first] = m->c_ind[second];
     m->c_ind[second] = k;
 
-    if (m->main == 0) m->canonized = 0;
+    // if (m->main == 0) m->canonized = 0;
+    m->canonized = 0;
 }
 
 void sparse_matrix_swap_lines(sparse_matrix_struct* m, ulong first, ulong second){
@@ -343,7 +372,8 @@ void sparse_matrix_swap_lines(sparse_matrix_struct* m, ulong first, ulong second
     m->l_ind[first] = m->l_ind[second];
     m->l_ind[second] = k;
 
-    if (m->main == 1) m->canonized = 0;
+    // if (m->main == 1) m->canonized = 0;
+    m->canonized = 0;
 }
 
 //TODO
@@ -433,14 +463,14 @@ void sparse_matrix_add_line_mul_ui(sparse_matrix_struct* m, ulong line, ulong ad
             finded_line = 0;
             finded_added_line = 0;
             for(i = 0; i < m->sm[j]->len; i++){
-                if (m->l_ind[mas[i].k] == line){
+                if (mas[i].k == m->l_ind[line]){
                     finded_line = 1;
                     el = mas[i].val;
                     k = i;
                     // printf("finded line, i=%ld\n", i);
                 }
 
-                if (m->l_ind[mas[i].k] == added_line){
+                if (mas[i].k == m->l_ind[added_line]){
                     finded_added_line = 1;
                     fq_nmod_set(cb, mas[i].val, m->ctx);
                     // printf("finded added line, i=%ld\n", i);
@@ -507,7 +537,8 @@ void sparse_matrix_mul_line_ui(sparse_matrix_struct* m, ulong k, ulong coeff){
         for(ulong j = 0; j < m->size; j++){
             for(ulong i = 0; i < m->sm[j]->len; i++){
                 smp = g_array_index(m->sm[j], sparse_matrix_pair, i);
-                if (m->l_ind[smp.k] == k){
+                // m->l_ind[smp.k] == k;
+                if (smp.k == m->l_ind[k]){
                     if (coeff % m->ctx->p == 0){
                         sparse_matrix_pair_clear(&smp, m->ctx);
                         g_array_remove_index(m->sm[j], i);
@@ -522,11 +553,35 @@ void sparse_matrix_mul_line_ui(sparse_matrix_struct* m, ulong k, ulong coeff){
     fq_nmod_clear(x, m->ctx);
 }
 
-void spatse_matrix_gauss_retucion(sparse_matrix_struct* m){
+// TODO column-main case
+slong sparse_matrix_find_not_null_line(const sparse_matrix_struct* m, ulong begin){
+    if (begin < 0) begin = 0;
+    if (begin >= m->size) return -1;
+    if (m->main == 0){
+        for(ulong i = begin; i < m->size; i++){
+            if (m->sm[m->l_ind[i]]->len != 0) return i;
+        }
+    } else {
+
+    }
+
+    return -1;
+}
+
+// TODO: column-main case
+ulong sparse_matrix_gauss_retucion(sparse_matrix_struct* m){
     
     if (m->main == 0){
-        ulong curr_line = 0;
-        
+        ulong i = 0, j = 0, r = 0;
+        slong l;
+
+        ulong curr_line;
+
+        while(1){
+            printf("%ld\n", sparse_matrix_find_not_null_line(m, i));
+            break;
+        }
+
     } else {
 
     }
