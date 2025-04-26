@@ -34,6 +34,8 @@ void sparse_matrix_test(){
     printf("\n\n");
     sparse_matrix_print_pretty(sparse_M);
     printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
     
     printf("swap columns, (0, 3), (1, 4)\n");
     sparse_matrix_swap_columns(sparse_M, 0, 3);
@@ -43,10 +45,11 @@ void sparse_matrix_test(){
     printf("\n\n");
     sparse_matrix_print_pretty(sparse_M);
     printf("\n");
-    sparse_matrix_print_info(sparse_M);
-    printf("\n\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+ 
 
-    printf("swap lines, (0, 3), (0, 2)");
+    printf("swap lines, (0, 3), (0, 2)\n");
     sparse_matrix_swap_lines(sparse_M, 0, 3);
     sparse_matrix_swap_lines(sparse_M, 0, 2);
 
@@ -54,8 +57,57 @@ void sparse_matrix_test(){
     printf("\n\n");
     sparse_matrix_print_pretty(sparse_M);
     printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+
+    printf("add to line 0 line 1\n");
+    sparse_matrix_add_line_mul_ui(sparse_M, 0, 1, 1);
+
     sparse_matrix_print_info(sparse_M);
     printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    // sparse_matrix_print(sparse_M);
+    // printf("\n");
+
+    printf("add to line 1 line 0\n");
+    sparse_matrix_add_line_mul_ui(sparse_M, 1, 0, 1);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+
+    printf("add to line 0 line 3 mul 6\n");
+    sparse_matrix_add_line_mul_ui(sparse_M, 0, 3, 6);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+
+    printf("mul line 0 by 0\n");
+    sparse_matrix_mul_line_ui(sparse_M, 0, 0);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+
+    printf("mul line 1 by 7\n");
+    sparse_matrix_mul_line_ui(sparse_M, 1, 7);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+
 
     sparse_matrix_clear(sparse_M);
 
@@ -92,8 +144,7 @@ void sparse_matrix_test(){
     printf("\n\n");
     sparse_matrix_print_pretty(sparse_M);
     printf("\n");
-    sparse_matrix_print_info(sparse_M);
-    printf("\n\n");
+    
     
     printf("swap lines: (0, 2), (3, 5)\n");
     sparse_matrix_swap_lines(sparse_M, 0, 2);
@@ -103,9 +154,56 @@ void sparse_matrix_test(){
     printf("\n\n");
     sparse_matrix_print_pretty(sparse_M);
     printf("\n");
+
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+
+    printf("add to line 0 line 1\n");
+    sparse_matrix_add_line_mul_ui(sparse_M, 0, 1, 1);
+
     sparse_matrix_print_info(sparse_M);
     printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+
     sparse_matrix_print(sparse_M);
+    printf("\n");
+
+    printf("add to line 3 line 4\n");
+    sparse_matrix_add_line_mul_ui(sparse_M, 3, 4, 1);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+
+    printf("add to line 5 line 3 mul 2\n");
+    sparse_matrix_add_line_mul_ui(sparse_M, 5, 3, 2);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+
+    printf("mul line 0 by 0\n");
+    sparse_matrix_mul_line_ui(sparse_M, 0, 0);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
+
+    printf("mul line 1 by 7\n");
+    sparse_matrix_mul_line_ui(sparse_M, 1, 7);
+
+    sparse_matrix_print_info(sparse_M);
+    printf("\n\n");
+    sparse_matrix_print_pretty(sparse_M);
+    printf("\n");
+    sparse_matrix_print(sparse_M);
+    printf("\n");
 
     sparse_matrix_clear(sparse_M);
     fq_nmod_ctx_clear(field);
