@@ -9,5 +9,5 @@ void main(){
     // printf("------------------------------------------------------\nthread_test\n");
     // thread_test();
     printf("\n\nsparse_matrix_test:\n");
-    sparse_matrix_test();
+    sparse_matrix_test(); 
 }

@@ -16,9 +16,16 @@ struct sparse_matrix_struct{
     ulong* c_ind;
     int main; // 0 - lines, 1 - columns
     int canonized;
+    int* canonized_ind;
     Field ctx;
 };
 
+struct sparse_matrix_pair{
+    ulong k;
+    fq_nmod_struct* val;
+};
+
+typedef struct sparse_matrix_pair sparse_matrix_pair;
 
 typedef struct Entry Entry;
 
@@ -43,3 +50,5 @@ void sparse_matrix_mul_line_fq_nmod(sparse_matrix_struct* m, ulong i, fq_nmod_st
 void sparse_matrix_print_info(const sparse_matrix_struct* m);
 ulong sparse_matrix_gauss_ref(sparse_matrix_struct* m);
 ulong sparse_matrix_gauss_rref(sparse_matrix_struct* m);
+ulong sparse_matrix_els_in_line(const sparse_matrix_struct* m, ulong line);
+void sparse_matrix_true_entry_fq_nmod(sparse_matrix_pair* smp, const sparse_matrix_struct* m, ulong i, ulong position);

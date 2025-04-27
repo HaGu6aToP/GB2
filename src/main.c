@@ -101,16 +101,19 @@ int main(int argc, char** argv){
     // printf("\n");
 
 
-    // Buchberger_result GBasis = buchberger_v2_1(basis, npoly, poly_ring_ctx);
+    Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
     // Buchberger_result GBasis = log_threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
     // Buchberger_result GBasis = threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
 
-    // printf("Groebner basis:\n");
-    // print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
+    printf("Groebner basis:\n");
+    print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
 
-    // check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    // if (check == 1) printf("This is Groebner basis :)\n");
-    // else printf("This is not Groebner basis :c\n");
+    check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+    if (check == 1) printf("This is Groebner basis :)\n");
+    else printf("This is not Groebner basis :c\n");
+    free_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+
+
 
     // fq_nmod_mpoly_t polynom1;
     // fq_nmod_mpoly_init(polynom1, poly_ring_ctx);
