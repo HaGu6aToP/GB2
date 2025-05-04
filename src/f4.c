@@ -276,7 +276,7 @@ void F4_select(GArray* Pd, GArray* P, const PolynomRing ctx){
 }
 
 void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
-    F4Pair f4p;
+    F4Pair f4p, *pf4p;
     Polynom new_poly, f;
     Polynom* hp;
     fq_nmod_mpoly_t m, div;
@@ -290,21 +290,37 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
     init_poly(div, ctx);
 
     // Формируем *S-пары*
-    while(Pd->len > 0){
-        f4p = g_array_index(Pd, F4Pair, Pd->len-1);
+    // while(Pd->len > 0){
+    //     f4p = g_array_index(Pd, F4Pair, Pd->len-1);
+    //     new_poly = __calloc_poly();
+    //     init_poly(new_poly, ctx);
+    //     fq_nmod_mpoly_mul(new_poly, f4p.t_f, f4p.f, ctx);
+    //     g_array_append_val(F, new_poly);
+
+    //     new_poly = __calloc_poly();
+    //     init_poly(new_poly, ctx);
+    //     fq_nmod_mpoly_mul(new_poly, f4p.t_g, f4p.g, ctx);
+    //     g_array_append_val(F, new_poly);
+
+    //     free_F4Pair(&f4p, ctx);
+    //     g_array_pop(Pd);
+    // }
+
+    pf4p = (F4Pair*)Pd->data;
+    for(i = 0; i < Pd->len; i++){
         new_poly = __calloc_poly();
         init_poly(new_poly, ctx);
-        fq_nmod_mpoly_mul(new_poly, f4p.t_f, f4p.f, ctx);
+        fq_nmod_mpoly_mul(new_poly, pf4p[i].t_f, pf4p[i].f, ctx);
         g_array_append_val(F, new_poly);
 
         new_poly = __calloc_poly();
         init_poly(new_poly, ctx);
-        fq_nmod_mpoly_mul(new_poly, f4p.t_g, f4p.g, ctx);
+        fq_nmod_mpoly_mul(new_poly, pf4p[i].t_g, pf4p[i].g, ctx);
         g_array_append_val(F, new_poly);
 
-        free_F4Pair(&f4p, ctx);
-        g_array_pop(Pd);
+        free_F4Pair(&pf4p[i], ctx);
     }
+    g_array_remove_range(Pd, 0, Pd->len);
 
     hp = (Polynom*)F->data;
     for(i = 0; i < F->len; i++){
@@ -346,6 +362,8 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
         // printf("HM(F)\\Done:\n");
         // print_poly_lst(sub, ctx);
         // printf("\n");
+
+        
 
         k = max_poly_in_lst(sub, ctx);
         // printf("k=%ld\n", k);
@@ -407,6 +425,10 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
     clear_poly(div, ctx);
 }
 
+void ref3(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
+
+}
+
 void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
     GArray* F_monoms;
     Polynom f;
@@ -417,7 +439,7 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     ulong i, j, k;
     slong* p;
     slong r, p_len, t;
-//-------------------------------------------------------
+//-------------------------------------------------------f
     F_monoms = __calloc_poly_lst();
     monom_lst_from_poly_lst(F_monoms, F, ctx);
     init_poly(m, ctx);
@@ -533,7 +555,14 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     // sparse_matrix_print_pretty(sparse_M);
     // printf("\n");
 
-    r = sparse_matrix_gauss_ref(sparse_M);
+    ulong not_null_elems = 0;
+    for(i = 0; i < F->len; i++)
+        not_null_elems += fq_nmod_mpoly_length(g_array_index(F, Polynom, i), ctx);
+    printf("LU (%d x %d) : %ld\n", F->len, F_monoms->len, not_null_elems);
+
+    r = sparse_matrix_gauss_rref(sparse_M);
+
+    printf("LU completed\n");
 
     // printf("ref: r=%ld\n", r);
     // sparse_matrix_print_pretty(sparse_M);
@@ -640,17 +669,17 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     // printf("%d, %d\n", F->len, F_monoms->len);
 //-------------------------------------------------------
     // printf("---------------------------------------ref---------------------------------------\n");
-    // printf("F:\n");
-    // print_poly_lst(F, ctx);
-    // printf("\n");
-    // printf("F_monoms:\n");
-    // print_poly_lst(F_monoms, ctx);
-    // printf("\n");
-    // printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
-    // printf("Columns=%d, Lines=%d\n", F_monoms->len, F->len);
-    // printf("M:\n");
-    // fq_nmod_mat_print_pretty(M, field);
-    // printf("\n");
+    printf("F:\n");
+    print_poly_lst(F, ctx);
+    printf("\n");
+    printf("F_monoms:\n");
+    print_poly_lst(F_monoms, ctx);
+    printf("\n");
+    printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
+    printf("Columns=%d, Lines=%d\n", F_monoms->len, F->len);
+    printf("M:\n");
+    fq_nmod_mat_print_pretty(M, field);
+    printf("\n");
 
     // printf("columns ordering: \n");
     // for(i = 0; i < p_len; i++)
@@ -658,20 +687,29 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     // printf("\n");
 
     // Приводим к верхне треугольней форме с помощью LU разложения
+    ulong not_null_elems = 0;
+    for(i = 0; i < F->len; i++)
+        not_null_elems += fq_nmod_mpoly_length(g_array_index(F, Polynom, i), ctx);
+    printf("LU (%d x %d) : %ld\n", F->len, F_monoms->len, not_null_elems);
+
     p[p_len - 1] = -1;
+    // FILE* file = fopen("res.txt", "w");
+    // fq_nmod_mat_fprint_pretty(file, M, field);
+    // fclose(file);
     r = fq_nmod_mat_lu_classical(p, M, 0, field);
+    printf("LU complete\n");
 
-    // printf("new columns ordering: \n");
-    // for(i = 0; i < p_len; i++)
-    //     printf("%ld ", p[i]);
-    // printf("\n");
+    printf("new columns ordering: \n");
+    for(i = 0; i < p_len; i++)
+        printf("%ld ", p[i]);
+    printf("\n");
 
-    // printf("\n");
-    // printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
-    // printf("M LU (%d, %d), %ld:\n", F->len, F_monoms->len, r);
-    // fq_nmod_mat_print_pretty(M, field);
-    // printf("\n");
-    // printf("rank=%ld\n", r);
+    printf("\n");
+    printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
+    printf("M LU (%d, %d), %ld:\n", F->len, F_monoms->len, r);
+    fq_nmod_mat_print_pretty(M, field);
+    printf("\n");
+    printf("rank=%ld\n", r);
 
     // printf("\n");
     // printf("M LU:\n");
@@ -695,8 +733,8 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
         }
 
         g_array_append_val(F_ref, f);
-        // fq_nmod_mpoly_print_pretty(f, NULL, ctx);
-        // printf("\n");
+        fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+        printf("\n");
     }
 
     // printf("---------------------------------------ref-end---------------------------------------\n");
@@ -728,14 +766,19 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
 //-------------------------------------------------------
     // printf("---------------------------------------reduction---------------------------------------\n");
     // Формирование "матрицы" F 
+    printf("statr preprocessing\n");
     preprocessing(F, Pd, G, ctx);
+    printf("preprocessing completed\n");
 
     // Приведение "матрицы" к верхне треугольному виду 
-    ref2(F_ref, F, field, ctx);
+    printf("start ref\n");
+    ref(F_ref, F, field, ctx);
+    printf("ref completed\n");
 
 
     // while(1){}
     // Выбираем полиномы для добавления в базис
+    printf("select new poly for basis\n");
     i = 0;
     while(i < F_ref->len){
         h = g_array_index(F_ref, Polynom, i);
@@ -757,6 +800,7 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
             g_array_remove_index(F_ref, i);
         } else i++;
     }
+    printf("select new poly for basis completed\n");
     // printf("---------------------------------------reduction-end---------------------------------------\n");
 //-------------------------------------------------------
     free_poly_lst(F, ctx);
@@ -944,9 +988,9 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
             g_array_remove_index(F_, F_->len-1);
         }
 
-        // printf("G len: %d\n", G->len);
-        // printf("P len: %d\n", P->len);
-        // printf("Pd len: %d\n", Pd->len);
+        printf("G len: %d\n", G->len);
+        printf("P len: %d\n", P->len);
+        printf("Pd len: %d\n", Pd->len);
 
         // printf("P:\n");
         // print_F4Pair_lst(P, ctx);

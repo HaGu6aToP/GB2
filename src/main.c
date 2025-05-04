@@ -107,6 +107,7 @@ int main(int argc, char** argv){
 
     printf("Groebner basis:\n");
     print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
+    printf("Basis len: %ld\n", GBasis2.len);
 
     check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
     if (check == 1) printf("This is Groebner basis :)\n");

@@ -15,6 +15,8 @@ extern "C" {
     typedef struct F4Result F4Result;
 
     F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx);
+    void F4_poly_reduce(GArray* F_ref, const GArray* F, const GArray* F_monoms, const Field field, const PolynomRing);
+
 
 #ifdef __cplusplus
 }

@@ -133,12 +133,19 @@ void sparse_matrix_add_elem_ui(sparse_matrix_struct* m, ulong line, ulong column
 
     // printf("column=%ld ,line=%ld , i=%ld, j=%ld\n", column, line, k, l);
 
-    if (m->main == 0){
-        if (m->sm[m->l_ind[line]]->len != 0){
-            if (g_array_index(m->sm[m->l_ind[line]], sparse_matrix_pair, m->sm[m->l_ind[line]]->len-1).k > m->c_ind[column]) 
-                m->canonized_ind[m->l_ind[line]] = 0;
-        } 
-    }
+    // if (m->main == 0){
+    //     if (m->sm[m->l_ind[line]]->len != 0){
+    //         if (g_array_index(m->sm[m->l_ind[line]], sparse_matrix_pair, m->sm[m->l_ind[line]]->len-1).k > m->c_ind[column]) 
+    //             m->canonized_ind[m->l_ind[line]] = 0;
+    //     } 
+    // }
+
+    // if (m->main == 0){
+    //     if (m->sm[k]->len != 0){
+    //         ulong col = g_array_index(m->sm[k], sparse_matrix_pair, m->sm[k]->len-1).k;
+    //         if (__find_ind(m->c_ind, m->columns, col) > column) m->canonized_ind[k] = 0;
+    //     }
+    // }
 
     if (m->main == 0){
         p.k = l; 

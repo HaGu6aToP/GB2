@@ -7,7 +7,20 @@ void sparse_matrix_test(){
     ulong r;
     fq_nmod_ctx_init(field, &p, 1, "X");
 
-    sparse_matrix_init(sparse_M, 4, 5, field);
+    // double k = 1./6;
+
+    // fmpz_t number;
+    // fmpz_init(number);
+    // fmpz_set_d(number, k);
+    // fq_nmod_t number2;
+    // fq_nmod_init(number2, field);
+    // fq_nmod_set_ui(number2, fmpz_get_ui(number), field);
+    // fq_nmod_print_pretty(number2, field);
+    // printf("\n========\n");
+
+    // fq_nmod_set
+
+    // sparse_matrix_init(sparse_M, 4, 5, field);
 
     // printf("lines-main matrix:\n");
 

@@ -62,16 +62,20 @@ obj_c = $(patsubst %.c, %.o, $(src_c))
 obj_cpp = $(patsubst %.cpp, %.o, $(src_cpp))
 obj = $(obj_c) $(obj_cpp)
 
+   
+
 # Флаги компиляции
 cflags = -I/usr/lib/x86_64-linux-gnu/glib-2.0/include \
 		-I/usr/include/glib-2.0 \
 		-I/usr/include/x86_64-linux-gnu/flint \
 		-I/usr/code/GB2 \
+		-I/home/kirill/gbla-0.2 \
 		-I$(incdir)
 
 # Флаги линковки
 ldflags = -L/usr/lib/x86_64-linux-gnu \
-		-lmpfr -lflint -lgmp -lglib-2.0
+		-L/home/kirill/gbla-0.2 \
+		-lmpfr -lflint -lgmp -lglib-2.0 -lgbla -lm
 
 # Правила компиляции
 $(target) : $(obj)
