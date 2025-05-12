@@ -268,32 +268,111 @@ int is_poly_in_lst(const GArray* g, const Polynom p, const PolynomRing ctx){
     return 0;
 }
 
+#define mmix(h,k) { k *= m; k ^= k >> r; k *= m; h *= m; h ^= k; }
+unsigned int MurmurHash2A ( const void * key, int len, unsigned int seed )
+{
+	const unsigned int m = 0x5bd1e995;
+	const int r = 24;
+	unsigned int l = len;
+
+	const unsigned char * data = (const unsigned char *)key;
+
+	unsigned int h = seed;
+	unsigned int k;
+
+	while(len >= 4)
+	{
+		k = *(unsigned int*)data;
+
+		mmix(h,k);
+
+		data += 4;
+		len -= 4;
+	}
+
+	unsigned int t = 0;
+
+	switch(len)
+	{
+	case 3: t ^= data[2] << 16;
+	case 2: t ^= data[1] << 8;
+	case 1: t ^= data[0];
+	};
+
+	mmix(h,t);
+	mmix(h,l);
+
+	h ^= h >> 13;
+	h *= m;
+	h ^= h >> 15;
+
+	return h;
+}
+
 void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx){
     Polynom* hp;
-    fq_nmod_mpoly_t m;
+    Polynom h;
     Polynom f;
+    // fq_nmod_mpoly_t m;
+    // fq_nmod_mpoly_init(m, ctx);
 
-    fq_nmod_mpoly_init(m, ctx);
     hp = (Polynom*)g->data;
+    char* key;
+    
+    // printf("hash\n");
+
+   GHashTable* gh = g_hash_table_new(g_str_hash, g_direct_equal);
+   for(ulong i = 0; i < g->len; i++){
+        for(ulong j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
+            h = flint_calloc(1, sizeof(fq_nmod_mpoly_t));
+            fq_nmod_mpoly_init(h, ctx);
+            fq_nmod_mpoly_get_term_monomial(h, *hp, j, ctx);
+            key = fq_nmod_mpoly_get_str_pretty(h, NULL, ctx);
+            if (g_hash_table_lookup(gh, key) == NULL){
+                g_hash_table_insert(gh, key, h);
+                // printf("%s\n", key);
+            }
+            free(key);
+        }
+        hp++;
+   }
+//    printf("ok\n");
+
+   GPtrArray* vals = g_hash_table_get_values_as_ptr_array(gh);
+   g_array_insert_vals(res, 0, vals->pdata, g_hash_table_size(gh));
+
+   g_ptr_array_free(vals, TRUE);
+   g_hash_table_destroy(gh);
+
+//    for(int i = 0; i < g_hash_table_size(gh); i++){
+//         fq_nmod_mpoly_print_pretty(((Basis)(res->data))[i], NULL, ctx);
+//         printf("\n");
+//    }
+
+   
+
+//    while(1){}
 
     // printf("-------------------monom_lst_from_poly_lst-------------------------\n");
     // print_poly_lst(g, ctx);
     // printf("\n");
 
-    for(int i = 0; i < g->len; i++){
-        for(int j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
-            fq_nmod_mpoly_get_term_monomial(m, *hp, j, ctx);
-            if (is_poly_in_lst(res, m, ctx) == 0){
-                f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
-                fq_nmod_mpoly_init(f, ctx);
-                fq_nmod_mpoly_set(f, m, ctx);
-                g_array_append_val(res, f);
-            }
-        }
-        hp++;
-    }
+    // for(int i = 0; i < g->len; i++){
+    //     for(int j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
+    //         fq_nmod_mpoly_get_term_monomial(m, *hp, j, ctx);
+    //         if (is_poly_in_lst(res, m, ctx) == 0){
+    //             f = flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+    //             fq_nmod_mpoly_init(f, ctx);
+    //             fq_nmod_mpoly_set(f, m, ctx);
+    //             g_array_append_val(res, f);
+    //         } else {
+    //             printf("already in\n");
+    //         }
+    //     }
+    //     hp++;
+    // }
 
-    fq_nmod_mpoly_clear(m, ctx);
+    // fq_nmod_mpoly_clear(m, ctx);
 }
 
 void head_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx){
@@ -352,4 +431,11 @@ void print_poly_lst(const GArray* lst, const PolynomRing ctx){
 
     fq_nmod_mpoly_print_pretty(g_array_index(lst, Polynom, lst->len - 1), NULL, ctx);
     printf(" }");
+}
+
+void* __calloc_poly_lst(){
+    return g_array_new(FALSE, FALSE, sizeof(Polynom));
+}
+void* __calloc_poly(){
+    return flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
 }

@@ -6,14 +6,14 @@
 #include "basis_tools.h"
 #include "sparse_matrix.h"
 
+#define __DEBUG_F4_POLY_REDUCE 0
+
 // #include <filesystem>
 // #include <fstream>
 // #include <iostream>
 
 // #include "../SparseRREF/argparse.hpp"
 // #include "../SparseRREF/sparse_mat.h"
-
-
 
 #define HM(res, f, ctx) fq_nmod_mpoly_get_term_monomial(res, f, 0, ctx)
 #define HT(res, f, ctx) fq_nmod_mpoly_get_term(res, f, 0, ctx)
@@ -22,17 +22,6 @@
 #define init_poly(f, ctx) fq_nmod_mpoly_init(f, ctx)
 #define clear_poly(f, ctx) fq_nmod_mpoly_clear(f, ctx)
 #define set_poly(res, f, ctx) fq_nmod_mpoly_set(res, f, ctx)
-
-
-
-
-
-void* __calloc_poly_lst(){
-    return g_array_new(FALSE, FALSE, sizeof(Polynom));
-}
-void* __calloc_poly(){
-    return flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
-}
 
 void g_array_pop(GArray* p){
     g_array_remove_index(p, p->len-1);
@@ -347,31 +336,38 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
         hp++;
     }
 //-------------------------------------------------------
-    // printf("---------------------------------------preprocessing---------------------------------------\n");
+    #if __DEBIG
+        printf("---------------------------------------preprocessing---------------------------------------\n");
+    #endif
     
     // Добавляем новые полиномы до тех пор, пока для каждого монома из T(F) не найдется полином f из F для котрого он ведущий
     while(sub->len != 0){
-        // printf("F:\n");
-        // print_poly_lst(F, ctx);
-        // printf("\n");
+        #if __DEBUG_F4
+            printf("F:\n");
+            print_poly_lst(F, ctx);
+            printf("\n");
 
-        // printf("Done:\n");
-        // print_poly_lst(done, ctx);
-        // printf("\n");
+            printf("Done:\n");
+            print_poly_lst(done, ctx);
+            printf("\n");
 
-        // printf("HM(F)\\Done:\n");
-        // print_poly_lst(sub, ctx);
-        // printf("\n");
-
-        
+            printf("HM(F)\\Done:\n");
+            print_poly_lst(sub, ctx);
+            printf("\n");
+        #endif
 
         k = max_poly_in_lst(sub, ctx);
-        // printf("k=%ld\n", k);
+        #if __DEBUG_F4
+            printf("k=%ld\n", k);
+        #endif
 
         f = g_array_index(sub, Polynom, k);
-        // printf("selected monom: ");
-        // fq_nmod_mpoly_print_pretty(f, NULL, ctx);
-        // printf("\n");
+
+        #if __DEBUG_F4
+            printf("selected monom: ");
+            fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+            printf("\n");
+        #endif
 
         g_array_append_val(done, f);
         g_array_remove_index(sub, k);
@@ -380,25 +376,29 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
         for(i = 0; i < G->len; i++){
             HM(m, *hp, ctx);
             if (fq_nmod_mpoly_divides(div, f, m, ctx) == 1){
-                // printf("selected monom - ");
-                // fq_nmod_mpoly_print_pretty(f, NULL, ctx);
-                // printf(" divides by HT(");
-                // fq_nmod_mpoly_print_pretty(*hp, NULL, ctx);
-                // printf(")=");
-                // fq_nmod_mpoly_print_pretty(m, NULL, ctx);
-                // printf("\n");
-                // printf("div=");
-                // fq_nmod_mpoly_print_pretty(div, NULL, ctx);
-                // printf("\n");
+                #if __DEBUG_F4
+                    printf("selected monom - ");
+                    fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+                    printf(" divides by HT(");
+                    fq_nmod_mpoly_print_pretty(*hp, NULL, ctx);
+                    printf(")=");
+                    fq_nmod_mpoly_print_pretty(m, NULL, ctx);
+                    printf("\n");
+                    printf("div=");
+                    fq_nmod_mpoly_print_pretty(div, NULL, ctx);
+                    printf("\n");
+                #endif
 
                 new_poly = __calloc_poly();
                 init_poly(new_poly, ctx);
                 fq_nmod_mpoly_mul(new_poly, div, *hp, ctx);
                 g_array_append_val(F, new_poly);
 
-                // printf("new poly - ");
-                // fq_nmod_mpoly_print_pretty(new_poly, NULL, ctx);
-                // printf("\n");
+                #if __DEBUG_F4
+                    printf("new poly - ");
+                    fq_nmod_mpoly_print_pretty(new_poly, NULL, ctx);
+                    printf("\n");
+                #endif
 
                 for(i = 1; i < fq_nmod_mpoly_length(new_poly, ctx); i++){
                     fq_nmod_mpoly_get_term_monomial(m, new_poly, i, ctx);
@@ -416,7 +416,9 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
 
         // break;
     }
-    // printf("---------------------------------------preprocessing---------------------------------------\n");
+    #if __DEBUG_F4
+        printf("---------------------------------------preprocessing---------------------------------------\n");
+    #endif
 //-------------------------------------------------------
     // g_array_free(sub, TRUE);
     free_poly_lst(sub, ctx);
@@ -426,7 +428,45 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
 }
 
 void ref3(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
+    GArray* F_monoms;
+    Polynom f;
+    Polynom *hp, *hg;
+    fq_nmod_mpoly_t m, sum, g;
+    fq_nmod_mat_t M;
+    fq_nmod_t x, y;
+    ulong i, j, k;
+    slong r, p_len, t;
+//-------------------------------------------------------
+    F_monoms = __calloc_poly_lst();
+    monom_lst_from_poly_lst(F_monoms, F, ctx);
+    init_poly(m, ctx);
+    init_poly(sum, ctx);
+    init_poly(g, ctx);
+    p_len = MAX(F_monoms->len, F->len);
 
+    poly_quick_sort(F_monoms, 0, F_monoms->len-1, 1, ctx);
+//-------------------------------------------------------
+
+    F4_poly_reduce(F_ref, F, F_monoms, field, ctx);
+
+    #if __DEBUG_F4_POLY_REDUCE
+        printf("F:\n");
+        print_poly_lst(F, ctx);
+        printf("\nF_monoms:\n");
+        print_poly_lst(F_monoms, ctx);
+        printf("\n");
+
+        printf("F_ref:\n");
+        print_poly_lst(F_ref, ctx);
+        printf("\n");
+        // sleep(1000);
+    #endif
+    
+//-------------------------------------------------------
+    free_poly_lst(F_monoms, ctx);
+    clear_poly(m, ctx);
+    clear_poly(sum, ctx);
+    clear_poly(g, ctx);
 }
 
 void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
@@ -439,7 +479,7 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     ulong i, j, k;
     slong* p;
     slong r, p_len, t;
-//-------------------------------------------------------f
+//-------------------------------------------------------
     F_monoms = __calloc_poly_lst();
     monom_lst_from_poly_lst(F_monoms, F, ctx);
     init_poly(m, ctx);
@@ -524,9 +564,11 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
 
 //-------------------------------------------------------
 
-    // printf("F:\n");
-    // print_poly_lst(F, ctx);
-    // printf("\n");
+    #if __DEBUG_F4
+        printf("F:\n");
+        print_poly_lst(F, ctx);
+        printf("\n");
+    #endif
     
 
     sparse_matrix_t sparse_M;
@@ -552,28 +594,35 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
         hp++;
     }
 
-    // sparse_matrix_print_pretty(sparse_M);
-    // printf("\n");
+    #if __DEBUG_F4
+        sparse_matrix_print_pretty(sparse_M);
+        printf("\n");
+    #endif
 
     ulong not_null_elems = 0;
     for(i = 0; i < F->len; i++)
         not_null_elems += fq_nmod_mpoly_length(g_array_index(F, Polynom, i), ctx);
-    printf("LU (%d x %d) : %ld\n", F->len, F_monoms->len, not_null_elems);
+
+    #if __DEBUG_F4
+        printf("LU (%d x %d) : %ld\n", F->len, F_monoms->len, not_null_elems);
+    #endif
 
     r = sparse_matrix_gauss_rref(sparse_M);
 
-    printf("LU completed\n");
+    #if __DEBUG_F4
+        printf("LU completed\n");
 
-    // printf("ref: r=%ld\n", r);
-    // sparse_matrix_print_pretty(sparse_M);
-    // printf("\n");
+        printf("ref: r=%ld\n", r);
+        sparse_matrix_print_pretty(sparse_M);
+        printf("\n");
 
-    // sparse_matrix_print_info(sparse_M);
-    // printf("\n");
+        sparse_matrix_print_info(sparse_M);
+        printf("\n");
 
-    // printf("F_monoms:\n");
-    // print_poly_lst(F_monoms, ctx);
-    // printf("\n");
+        printf("F_monoms:\n");
+        print_poly_lst(F_monoms, ctx);
+        printf("\n");
+    #endif
 
     sparse_matrix_pair smp;
     
@@ -582,7 +631,10 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
         f = __calloc_poly();
         init_poly(f, ctx);
         
-        // printf("els = %ld\n", sparse_matrix_els_in_line(sparse_M, i));
+        #if __DEBUG_F4
+            printf("els = %ld\n", sparse_matrix_els_in_line(sparse_M, i));
+        #endif
+
         for(j = 0; j < sparse_matrix_els_in_line(sparse_M, i); j++){
             // sparse_matrix_pair* smp = sparse_matrix_true_entry_fq_nmod(sparse_M, i, j);
             sparse_matrix_true_entry_fq_nmod(&smp, sparse_M, i, j);
@@ -600,8 +652,10 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
         }
 
         g_array_append_val(F_ref, f);
-        // fq_nmod_mpoly_print_pretty(f, NULL, ctx);
-        // printf("\n");
+        #if __DEBUG_F4
+            fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+            printf("\n");
+        #endif
         // clear_poly(f, ctx);
         // flint_free(f);
     }
@@ -668,53 +722,60 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     }
     // printf("%d, %d\n", F->len, F_monoms->len);
 //-------------------------------------------------------
-    // printf("---------------------------------------ref---------------------------------------\n");
-    printf("F:\n");
-    print_poly_lst(F, ctx);
-    printf("\n");
-    printf("F_monoms:\n");
-    print_poly_lst(F_monoms, ctx);
-    printf("\n");
-    printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
-    printf("Columns=%d, Lines=%d\n", F_monoms->len, F->len);
-    printf("M:\n");
-    fq_nmod_mat_print_pretty(M, field);
-    printf("\n");
-
-    // printf("columns ordering: \n");
-    // for(i = 0; i < p_len; i++)
-    //     printf("%ld ", p[i]);
-    // printf("\n");
+    #if __DEBUG_F4
+        printf("---------------------------------------ref---------------------------------------\n");
+        printf("F:\n");
+        print_poly_lst(F, ctx);
+        printf("\n");
+        printf("F_monoms:\n");
+        print_poly_lst(F_monoms, ctx);
+        printf("\n");
+        printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
+        printf("Columns=%d, Lines=%d\n", F_monoms->len, F->len);
+        printf("M:\n");
+        fq_nmod_mat_print_pretty(M, field);
+        printf("\n");
+    
+        printf("columns ordering: \n");
+        for(i = 0; i < p_len; i++)
+            printf("%ld ", p[i]);
+        printf("\n");
+    #endif
 
     // Приводим к верхне треугольней форме с помощью LU разложения
     ulong not_null_elems = 0;
     for(i = 0; i < F->len; i++)
         not_null_elems += fq_nmod_mpoly_length(g_array_index(F, Polynom, i), ctx);
-    printf("LU (%d x %d) : %ld\n", F->len, F_monoms->len, not_null_elems);
+
+    #if __DEBUG_F4
+        printf("LU (%d x %d) : %ld\n", F->len, F_monoms->len, not_null_elems);
+    #endif
 
     p[p_len - 1] = -1;
     // FILE* file = fopen("res.txt", "w");
     // fq_nmod_mat_fprint_pretty(file, M, field);
     // fclose(file);
     r = fq_nmod_mat_lu_classical(p, M, 0, field);
-    printf("LU complete\n");
 
-    printf("new columns ordering: \n");
-    for(i = 0; i < p_len; i++)
-        printf("%ld ", p[i]);
-    printf("\n");
+    #if __DEBUG_F4
+        printf("LU complete\n");
+        printf("new columns ordering: \n");
+        for(i = 0; i < p_len; i++)
+            printf("%ld ", p[i]);
+        printf("\n");
 
-    printf("\n");
-    printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
-    printf("M LU (%d, %d), %ld:\n", F->len, F_monoms->len, r);
-    fq_nmod_mat_print_pretty(M, field);
-    printf("\n");
-    printf("rank=%ld\n", r);
+        printf("\n");
+        printf("%d %d\n", F_monoms->len, fq_nmod_mat_ncols(M, field));
+        printf("M LU (%d, %d), %ld:\n", F->len, F_monoms->len, r);
+        fq_nmod_mat_print_pretty(M, field);
+        printf("\n");
+        printf("rank=%ld\n", r);
 
-    // printf("\n");
-    // printf("M LU:\n");
-    // fq_nmod_mat_print_pretty(M, field);
-    // printf("\n");
+        printf("\n");
+        printf("M LU:\n");
+        fq_nmod_mat_print_pretty(M, field);
+        printf("\n");
+    #endif
 
     // Получаем редуцированные полиномы
     for(i = 0; i < r; i++){
@@ -733,11 +794,15 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
         }
 
         g_array_append_val(F_ref, f);
-        fq_nmod_mpoly_print_pretty(f, NULL, ctx);
-        printf("\n");
+        #if __DEBUG_F4
+            fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+            printf("\n");
+        #endif
     }
 
-    // printf("---------------------------------------ref-end---------------------------------------\n");
+    #if __DEBUG_F4
+        printf("---------------------------------------ref-end---------------------------------------\n");
+    #endif
 //-------------------------------------------------------
     free_poly_lst(F_monoms, ctx);
     clear_poly(m, ctx);
@@ -764,21 +829,34 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
     init_poly(f, ctx);
     init_poly(g, ctx);
 //-------------------------------------------------------
-    // printf("---------------------------------------reduction---------------------------------------\n");
+    #if __DEBUG_F4
+        printf("---------------------------------------reduction---------------------------------------\n");
+    #endif
     // Формирование "матрицы" F 
-    printf("statr preprocessing\n");
+
+    #if __DEBUG_F4
+        printf("statr preprocessing\n");
+    #endif
     preprocessing(F, Pd, G, ctx);
-    printf("preprocessing completed\n");
+    #if __DEBUG_F4
+        printf("preprocessing completed\n");
+    #endif
 
     // Приведение "матрицы" к верхне треугольному виду 
-    printf("start ref\n");
-    ref(F_ref, F, field, ctx);
-    printf("ref completed\n");
-
+    #if __DEBUG_F4
+        printf("start ref\n");
+    #endif
+    ref3(F_ref, F, field, ctx);
+    #if __DEBUG_F4
+        printf("ref completed\n");
+    #endif
 
     // while(1){}
     // Выбираем полиномы для добавления в базис
-    printf("select new poly for basis\n");
+    #if __DEBUG_F4
+        printf("select new poly for basis\n");
+    #endif
+
     i = 0;
     while(i < F_ref->len){
         h = g_array_index(F_ref, Polynom, i);
@@ -800,14 +878,31 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
             g_array_remove_index(F_ref, i);
         } else i++;
     }
-    printf("select new poly for basis completed\n");
-    // printf("---------------------------------------reduction-end---------------------------------------\n");
+    #if __DEBUG_F4
+        printf("select new poly for basis completed\n");
+        printf("---------------------------------------reduction-end---------------------------------------\n");
+    #endif
 //-------------------------------------------------------
     free_poly_lst(F, ctx);
     free_poly_lst(F_ref, ctx);
     clear_poly(f, ctx);
     clear_poly(g, ctx);
 }
+
+
+int monom_divides(const Polynom a, const Polynom b, const PolynomRing ctx){
+    ulong nvars = fq_nmod_mpoly_ctx_nvars(ctx);
+    ulong expa[nvars], expb[nvars];
+
+    fq_nmod_mpoly_get_term_exp_ui(expa, a, 0, ctx);
+    fq_nmod_mpoly_get_term_exp_ui(expb, b, 0, ctx);
+
+    for(ulong i = 0; i < nvars; i++)
+        if (expa[i] < expb[i]) return 0;
+
+    return 1;
+}
+
 
 // Критерий
 void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomRing ctx){
@@ -845,7 +940,7 @@ void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomR
     while(i < P->len){
         f4p = g_array_index(P, F4Pair, i);
 
-        if (fq_nmod_mpoly_divides(div, f4p.lcm, hm_h, ctx) == 1){
+        if (monom_divides(f4p.lcm, hm_h, ctx) == 1){
             lcm(_lcm, h, f4p.f, ctx);
             if (fq_nmod_mpoly_equal(_lcm, f4p.lcm, ctx) == 0){
                 lcm(_lcm, h, f4p.g, ctx);
@@ -869,7 +964,7 @@ void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomR
             if (i != j){
                 f4p_g = g_array_index(_P, F4Pair, j);
 
-                if (fq_nmod_mpoly_divides(div, f4p_g.lcm, f4p_f.lcm, ctx) == 1){
+                if (monom_divides(f4p_g.lcm, f4p_f.lcm, ctx) == 1){
                     free_F4Pair(&f4p_g, ctx);
                     g_array_remove_index(_P, j);
                     if (j < i) i--;
@@ -940,41 +1035,49 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
         F4_GMI(P, G, g_array_index(G, Polynom, i), i, ctx);
 //-------------------------------------------------------
 
-    // printf("%d\n", G->len);
-    // printf("G:\n");
-    // print_poly_lst(G, ctx);
-    // printf("\n");
+    #if __DEBUG_F4
+        printf("%d\n", G->len);
+        printf("G:\n");
+        print_poly_lst(G, ctx);
+        printf("\n");
 
-    // printf("P:\n");
-    // print_F4Pair_lst(P, ctx);
-    // printf("\n");
+        printf("P:\n");
+        print_F4Pair_lst(P, ctx);
+        printf("\n");
 
-    // printf("Pd:\n");
-    // print_F4Pair_lst(Pd, ctx);
-    // printf("\n");
+        printf("Pd:\n");
+        print_F4Pair_lst(Pd, ctx);
+        printf("\n");
+    #endif
+
     int counter = 0;
 
     while(P->len > 0){
-        // if (counter == 2) break;
-
-        // d = find_min_deg_in_F4Pairs(P, ctx);
-        // printf("min deg=%ld\n", d);
+        d = find_min_deg_in_F4Pairs(P, ctx);
+        #if __DEBUG_F4
+                // if (counter == 2) break;
+                printf("min deg=%ld\n", d);
+        #endif
 
         // Выбираем критические пары, переносим их в Pd и удаляем из P
         F4_select(Pd, P, ctx);
 
-        // printf("Pd:\n");
-        // print_F4Pair_lst(Pd, ctx);
-        // printf("\nP:\n");
-        // print_F4Pair_lst(P, ctx);
-        // printf("\n");
+        #if __DEBUG_F4
+                printf("Pd:\n");
+                print_F4Pair_lst(Pd, ctx);
+                printf("\nP:\n");
+                print_F4Pair_lst(P, ctx);
+                printf("\n");
+        #endif
 
         // Строим новые полиномы по критическим парам в Pd и редуцируем их
         reduction(F_, Pd, G, field, ctx);
 
-        // printf("F+:\n");
-        // print_poly_lst(F_, ctx);
-        // printf("\n");
+        #if __DEBUG_F4
+            printf("F+:\n");
+            print_poly_lst(F_, ctx);
+        printf("\n");
+        #endif
 
         
         while(F_->len > 0){
@@ -988,26 +1091,60 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
             g_array_remove_index(F_, F_->len-1);
         }
 
-        printf("G len: %d\n", G->len);
-        printf("P len: %d\n", P->len);
-        printf("Pd len: %d\n", Pd->len);
+        #if __DEBUG_F4
+            printf("G len: %d\n", G->len);
+            printf("P len: %d\n", P->len);
+            printf("Pd len: %d\n", Pd->len);
+        
 
-        // printf("P:\n");
-        // print_F4Pair_lst(P, ctx);
-        // printf("\n");
+            printf("P:\n");
+            print_F4Pair_lst(P, ctx);
+            printf("\n");
 
-        // printf("Pd:\n");
-        // print_F4Pair_lst(Pd, ctx);
-        // printf("\n");
+            printf("Pd:\n");
+            print_F4Pair_lst(Pd, ctx);
+            printf("\n");
 
-        // printf("G:\n");
-        // print_poly_lst(G, ctx);
-        // printf("\n");
+            printf("G:\n");
+            print_poly_lst(G, ctx);
+            printf("\n");
 
-        // sleep(3);
+            sleep(3);
+        #endif
         // counter++;
         // break;
     }
+
+    // #if __DEBUG_CHECK
+    //     Basis b = (Basis)G->data;
+    //     fq_nmod_mpoly_t s, s_mod;
+    //     Basis Q = init_empty_basis(G->len, ctx);
+    //     int flag = 1;
+
+    //     init_poly(s, ctx);
+    //     init_poly(s_mod, ctx);
+
+    //     for(i = 0; i < G->len-1; i++){
+    //         for(j = i+1; j < G->len; j++){
+    //             // spol(s, b[i], b[j], field, ctx);
+    //             spol_old(s, b[i], b[j], ctx);
+    //             fq_nmod_mpoly_divrem_ideal(Q, s_mod, s, b, G->len, ctx);
+    //             if (fq_nmod_mpoly_is_zero(s_mod, ctx)){
+    //                 flag = 0;
+    //                 break;
+    //             }
+    //         }
+
+    //         if (!flag) break;
+    //     }
+
+    //     if (flag) printf("This is Groebner basis :)\n");
+    //     else printf("This is not Groebner basis :c\n");
+
+    //     free_basis(Q, G->len, ctx);
+    //     clear_poly(s, ctx);
+    //     clear_poly(s_mod, ctx);
+    // #endif
 //-------------------------------------------------------
     Basis res = from_garray(G);
     F4Result resres = {res, G->len};

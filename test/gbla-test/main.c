@@ -333,7 +333,7 @@ sm_t *load_schreyer_matrix(const char *fn, int verbose)
 
 
 void main(){
-  sm_t* M = load_schreyer_matrix("4.txt", 0);
+  sm_t* M = load_schreyer_matrix("2.txt", 0);
   sort_schreyer_matrix(M);
   normalize_schreyer_input_rows(M);
   print_sparse_matrix(M);

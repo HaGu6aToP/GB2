@@ -3,7 +3,10 @@
 #include "basis_tools.h"
 #include "tools.h"
 #include "f4.h"
+// #include "config.h"
 #include <time.h>
+
+#define __DEBUG_CHECK 0
 
 
 // First aurgument is the file name. 
@@ -36,7 +39,7 @@ int main(int argc, char** argv){
     ulong nvars; // Variables count
     char buff[BUFFER_SIZE];
     const char** variables;
-    const ordering_t order = ORD_LEX; // Ordering
+    const ordering_t order = ORD_DEGREVLEX; // Ordering
     ulong p; // Field order
     fq_nmod_ctx_t field_ctx; // Field
     fq_nmod_mpoly_ctx_t poly_ring_ctx; // Ring
@@ -88,32 +91,37 @@ int main(int argc, char** argv){
     // spol(s, f, g, poly_ring_ctx);
     // fq_nmod_mpoly_print_pretty(s, arr_variables, poly_ring_ctx);
     
-    // printf("Basis:\n");
-    // print_basis(basis, npoly, variables, poly_ring_ctx);
+    printf("Basis:\n");
+    print_basis(basis, npoly, variables, poly_ring_ctx);
 
-    F4Result GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
-    printf("Groebner basis:\n");
-    print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
-    check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-    if (check == 1) printf("This is Groebner basis :)\n");
-    else printf("This is not Groebner basis :c\n"); 
+    // F4Result GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
+    // printf("Groebner basis(F4):\n");
+    // print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
+    // printf("Basis len: %ld\n", GBasis.len);
+
+    #if __DEBUG_CHECK
+        check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+        if (check == 1) printf("This is Groebner basis :)\n");
+        else printf("This is not Groebner basis :c\n"); 
+    #endif
 
     // printf("\n");
 
 
-    Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
-    // Buchberger_result GBasis = log_threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
-    // Buchberger_result GBasis = threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
+    #if __DEBUG_CHECK
+        Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
+        // Buchberger_result GBasis = log_threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
+        // Buchberger_result GBasis = threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
 
-    printf("Groebner basis:\n");
-    print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
-    printf("Basis len: %ld\n", GBasis2.len);
+        printf("Groebner basis(buchberger):\n");
+        print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
+        printf("Basis len: %ld\n", GBasis2.len);
 
-    check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
-    if (check == 1) printf("This is Groebner basis :)\n");
-    else printf("This is not Groebner basis :c\n");
-    free_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
-
+        check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+        if (check == 1) printf("This is Groebner basis :)\n");
+        else printf("This is not Groebner basis :c\n");
+        free_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+    #endif
 
 
     // fq_nmod_mpoly_t polynom1;
@@ -143,7 +151,9 @@ int main(int argc, char** argv){
     struct timespec start, end;
     double summ_time = 0;
 
-    free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    F4Result GBasis;
+
+    // free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
     for (int i = 0; i < repeats; i++){
         clock_gettime(CLOCK_MONOTONIC, &start);
         // Buchberger_result GBasis = buchberger_v2_1(basis, npoly, poly_ring_ctx);

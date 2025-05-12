@@ -50,6 +50,7 @@ struct F4Pair{
     Polynom f;
     Polynom t_g;
     Polynom g;
+    ulong deg;
 };
 
 struct F4PairProjection{

@@ -70,12 +70,13 @@ cflags = -I/usr/lib/x86_64-linux-gnu/glib-2.0/include \
 		-I/usr/include/x86_64-linux-gnu/flint \
 		-I/usr/code/GB2 \
 		-I/home/kirill/gbla-0.2 \
-		-I$(incdir)
+		-I$(incdir) \
+		-O2
 
 # Флаги линковки
 ldflags = -L/usr/lib/x86_64-linux-gnu \
 		-L/home/kirill/gbla-0.2 \
-		-lmpfr -lflint -lgmp -lglib-2.0 -lgbla -lm
+		-lmpfr -lflint -lgmp -lglib-2.0 -lgbla -lm -O2
 
 # Правила компиляции
 $(target) : $(obj)

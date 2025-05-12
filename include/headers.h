@@ -9,3 +9,5 @@
 // Динамический массив
 #include "glib-2.0/glib.h"
 #include "glib-2.0/glib/garray.h"
+
+#include "config.h"

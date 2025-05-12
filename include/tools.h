@@ -35,6 +35,10 @@ void free_poly_lst(GArray* g, PolynomRing ctx);
 void head_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx);
 void print_poly_lst(const GArray* lst, const PolynomRing ctx);
 
+void* __calloc_poly_lst();
+void* __calloc_poly();
+
+
 #ifdef __cplusplus
 }
 #endif
