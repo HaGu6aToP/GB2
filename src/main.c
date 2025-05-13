@@ -94,15 +94,19 @@ int main(int argc, char** argv){
     printf("Basis:\n");
     print_basis(basis, npoly, variables, poly_ring_ctx);
 
-    // F4Result GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
-    // printf("Groebner basis(F4):\n");
-    // print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
-    // printf("Basis len: %ld\n", GBasis.len);
+     F4Result GBasis;
 
     #if __DEBUG_CHECK
+        GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
+        printf("Groebner basis(F4):\n");
+        print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
+        printf("Basis len: %ld\n", GBasis.len);
+
+    
         check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
         if (check == 1) printf("This is Groebner basis :)\n");
-        else printf("This is not Groebner basis :c\n"); 
+        else printf("This is not Groebner basis :c\n");
+        free_basis(GBasis.basis, GBasis.len, poly_ring_ctx); 
     #endif
 
     // printf("\n");
@@ -151,9 +155,7 @@ int main(int argc, char** argv){
     struct timespec start, end;
     double summ_time = 0;
 
-    F4Result GBasis;
-
-    // free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+    
     for (int i = 0; i < repeats; i++){
         clock_gettime(CLOCK_MONOTONIC, &start);
         // Buchberger_result GBasis = buchberger_v2_1(basis, npoly, poly_ring_ctx);
