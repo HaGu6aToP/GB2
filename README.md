@@ -8,7 +8,7 @@ This library implements the Buchberg algorithm, the improved Buchberger algorith
 
 ## Dependence
 
-Algorithm F4 uses the functions of reducing the sparse matrix to row echelon form from GBLA. You can download it from <a href='https://hpac.imag.fr/gbla/'>link</a> (version 0.2 from 2016). Then you need to go to the mapping.c file and change lines 758 
+Algorithm F4 uses the functions of reducing the sparse matrix to row echelon form from GBLA. You can download it from <a href='https://hpac.imag.fr/gbla/'>link</a> (version 0.2 from 2016). Then you need to go to the **mapping.c** file and change lines 758 
 
 ``` M->pos[i][M->rwidth[i]] = map->pc[i];``` 
 
