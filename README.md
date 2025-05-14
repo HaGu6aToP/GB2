@@ -24,7 +24,7 @@ and
 
 ```M->pos[i][M->rwidth[i]]   = map->npiv+j;``` 
 
-(Or I can provide a compiled version by me if someone sees this and asks for it :D). Then follow the instructions in GBLA.
+(Or I can provide a compiled version by me if someone sees this and asks for it :D). Then follow the installation instructions in GBLA.
 
 ## BenchMark
 
