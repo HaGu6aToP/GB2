@@ -28,6 +28,11 @@ and
 
 ## BenchMark
 
+$$
+    p = 31
+$$
+
+
 |system |F4 (sec)|
 |-------|--------|
 |bayes148| >7200|
