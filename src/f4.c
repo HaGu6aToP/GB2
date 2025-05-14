@@ -992,18 +992,25 @@ void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomR
     }
 
 
-    while(_P->len != 0){
-        f4p = g_array_index(_P, F4Pair, _P->len-1);
-        g_array_append_val(P, f4p);
-        g_array_remove_index(_P, _P->len-1);
+    // while(_P->len != 0){
+    //     f4p = g_array_index(_P, F4Pair, _P->len-1);
+    //     g_array_append_val(P, f4p);
+    //     g_array_remove_index(_P, _P->len-1);
+    // }
+
+    F4Pair* mas = (F4Pair*)_P->data;
+    for(i = 0; i < _P->len; i++){
+        g_array_append_val(P, mas[i]);
     }
 
 //-------------------------------------------------------
-    g_array_free(_P, TRUE);
+    // g_array_free(_P, TRUE);
+    g_array_free(_P, FALSE);
     clear_poly(div, ctx);
     clear_poly(_lcm, ctx);
     clear_poly(hm_h, ctx);
 }
+
 
 #ifdef __cplusplus
 extern "C"
@@ -1076,7 +1083,7 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
         #if __DEBUG_F4
             printf("F+:\n");
             print_poly_lst(F_, ctx);
-        printf("\n");
+            printf("\n");
         #endif
 
         
@@ -1149,7 +1156,7 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     Basis res = from_garray(G);
     F4Result resres = {res, G->len};
     // free_poly_lst(G, ctx);
-    g_array_free(G, TRUE);
+    g_array_free(G, FALSE);
     free_poly_lst(F_, ctx);
     free_F4Pair_lst(P, ctx);
     free_F4Pair_lst(Pd, ctx);

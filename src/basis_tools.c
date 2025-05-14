@@ -11,13 +11,14 @@ Basis init_basis(ulong npolynoms, const char** strs, const char** vars, const Po
 }
 
 Basis from_garray(GArray* g){
-    Basis basis = flint_calloc(g->len, sizeof(Polynom));
-    Polynom* p = (Polynom*)g->data;
-    for (int i = 0; i < g->len; i++){
-        basis[i] = *p;
-        p += 1;
-    }
-    return basis;
+    // Basis basis = flint_calloc(g->len, sizeof(Polynom));
+    // Polynom* p = (Polynom*)g->data;
+    // for (int i = 0; i < g->len; i++){
+    //     basis[i] = *p;
+    //     p += 1;
+    // }
+    // return basis;
+    return (Basis)g->data;
 }
 
 Basis init_empty_basis(ulong npolynoms, const PolynomRing ctx){
