@@ -6,7 +6,7 @@
 // #include "config.h"
 #include <time.h>
 
-#define __DEBUG_CHECK 0
+#define __DEBUG_CHECK 1
 
 
 // First aurgument is the file name. 
@@ -162,6 +162,7 @@ int main(int argc, char** argv){
         // threaded_buchberger_v2(basis, npoly, threads_count, poly_ring_ctx);
         GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
         clock_gettime(CLOCK_MONOTONIC, &end);
+        // printf("%d\n", GBasis.len);
         free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
         summ_time += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
         if (i % 100 == 0) printf("i=%d\n", i);

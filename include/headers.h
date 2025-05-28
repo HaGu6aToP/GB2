@@ -2,9 +2,11 @@
 
 #include <stdlib.h>
 #include <gmp.h>
+
+// Простое поле и кольцо многочленов
 #include "flint/flint.h"
-#include "flint/fq_nmod.h" // Простое поле
-#include "flint/fq_nmod_mpoly.h" // Кольцо многочленов нескольких переменных над конечным полем
+#include "flint/fq_nmod.h" 
+#include "flint/fq_nmod_mpoly.h" 
 
 // Динамический массив
 #include "glib-2.0/glib.h"

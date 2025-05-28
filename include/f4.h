@@ -14,7 +14,10 @@ extern "C" {
 
     typedef struct F4Result F4Result;
 
+    // Алгоритм F4
     F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx);
+
+    // Редуцирование матрицу к верхне треугольному виду
     void F4_poly_reduce(GArray* F_ref, const GArray* F, const GArray* F_monoms, const Field field, const PolynomRing);
 
 

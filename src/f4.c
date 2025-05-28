@@ -6,7 +6,7 @@
 #include "basis_tools.h"
 #include "sparse_matrix.h"
 
-#define __DEBUG_F4_POLY_REDUCE 0
+// #define __DEBUG_F4_POLY_REDUCE 0
 
 // #include <filesystem>
 // #include <fstream>
@@ -837,25 +837,32 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
     #if __DEBUG_F4
         printf("statr preprocessing\n");
     #endif
+
     preprocessing(F, Pd, G, ctx);
+
     #if __DEBUG_F4
         printf("preprocessing completed\n");
     #endif
 
-    // Приведение "матрицы" к верхне треугольному виду 
+    
     #if __DEBUG_F4
         printf("start ref\n");
     #endif
+    
+    // Приведение "матрицы" к верхне треугольному виду 
     ref3(F_ref, F, field, ctx);
+    
     #if __DEBUG_F4
         printf("ref completed\n");
     #endif
 
-    // while(1){}
-    // Выбираем полиномы для добавления в базис
+    
     #if __DEBUG_F4
         printf("select new poly for basis\n");
     #endif
+
+    // while(1){}
+    // Выбираем полиномы для добавления в базис
 
     i = 0;
     while(i < F_ref->len){
@@ -1015,6 +1022,8 @@ void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomR
 #ifdef __cplusplus
 extern "C"
 #endif 
+// FIXME: для task2 и p=90641, 100000007, ... не выполняется критерий S-пар :c 
+// P.S похоже, что это проблема GBLA
 F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx){
     GArray *G; // Строящийся базис гребнера
     GArray *F_; // Новые полиномы добавляемые в базис

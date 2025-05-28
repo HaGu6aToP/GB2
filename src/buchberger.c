@@ -7,7 +7,7 @@
 
 ulong NO_OF_IRRED = 1;
 
-// Наименьшее общее кратное ведущих мономов многочленов
+
 void LCM(Polynom monom, const Polynom p1, const Polynom p2, const PolynomRing ctx){
     ulong nvars = fq_nmod_mpoly_ctx_nvars(ctx);
     ulong exp_p1[nvars];
@@ -25,7 +25,7 @@ void LCM(Polynom monom, const Polynom p1, const Polynom p2, const PolynomRing ct
     fq_nmod_mpoly_set_term_exp_ui(monom, 0, exp_monom, ctx);
 }
 
-// S полином
+
 void S(Polynom S, const Polynom p1, const Polynom p2, const PolynomRing ctx){
     ulong nvars = fq_nmod_mpoly_ctx_nvars(ctx);
     fq_nmod_mpoly_t lcm;
@@ -113,7 +113,7 @@ void log_S(Polynom S, const Polynom p1, const Polynom p2, const PolynomRing ctx)
     printf("\n--------------------------\n");
 }
 
-// 1 - если критерий выполняется, 0 - не выполняется
+
 int crit(GArray* G, GArray* B, ulong i, ulong j, const Polynom f, const Polynom g, const Polynom lcm, const PolynomRing ctx){
     ulong k;
     int flag1, flag2, flag3;
@@ -1333,7 +1333,7 @@ Buchberger_result buchberger_v2_1(const Basis basis, ulong t, const PolynomRing 
     ulong len = F->len;
     Buchberger_result resres = {res, len};
     fq_nmod_mpoly_clear(reminder, ctx);
-    g_array_free(F, TRUE);
+    g_array_free(F, FALSE);
     g_array_free(P, TRUE);
 
     for(i = 0; i < Q->len; i++){

@@ -4,7 +4,7 @@
 #include "gbla/matrix.h"
 #include "gbla/mapping.h"
 
-#define __DEBUG_F4_POLY_REDUCE 0
+// #define __DEBUG_F4_POLY_REDUCE 0
 
 void print_sparse_matrix_info(const sm_t* M){
     printf("nrows=%d ncols=%d nnz=%ld density=%f\n", (int)M->nrows, (int)M->ncols, M->nnz, M->density);
