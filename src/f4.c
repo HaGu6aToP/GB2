@@ -673,7 +673,6 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     sparse_matrix_clear(sparse_M);
 }
 
-
 void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
     GArray* F_monoms;
     Polynom f;
@@ -814,7 +813,6 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     flint_free(p);
 }
 
- 
 void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const PolynomRing ctx){
     GArray* F;
     GArray* F_ref;
@@ -1033,6 +1031,7 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     ulong i, j;
     Polynom f, g, h;
     Polynom* hp;
+    Basis temp;
 //-------------------------------------------------------
     G = __calloc_poly_lst(); // g_array_new(FALSE, FALSE, sizeof(Polynom));
     F_ = __calloc_poly_lst();
@@ -1069,8 +1068,8 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     int counter = 0;
 
     while(P->len > 0){
-        d = find_min_deg_in_F4Pairs(P, ctx);
         #if __DEBUG_F4
+            d = find_min_deg_in_F4Pairs(P, ctx);
                 // if (counter == 2) break;
                 printf("min deg=%ld\n", d);
         #endif
@@ -1096,16 +1095,25 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
         #endif
 
         
-        while(F_->len > 0){
-            f = g_array_index(F_, Polynom, F_->len-1);
-            
-            // Добавляем новые критические пары
-            F4_GMI(P, G, f, G->len, ctx);
-
-            // Добавляем новый полином в базис
-            g_array_append_val(G, f);
-            g_array_remove_index(F_, F_->len-1);
+        temp = (Basis)F_->data;
+        for(i = 0; i < F_->len; i++){
+            F4_GMI(P, G, temp[i], G->len, ctx);
+            g_array_append_val(G, temp[i]);
         }
+
+        g_array_free(F_, FALSE);
+        F_ = __calloc_poly_lst();
+
+        // while(F_->len > 0){
+        //     f = g_array_index(F_, Polynom, F_->len-1);
+            
+        //     // Добавляем новые критические пары
+        //     F4_GMI(P, G, f, G->len, ctx);
+
+        //     // Добавляем новый полином в базис
+        //     g_array_append_val(G, f);
+        //     g_array_remove_index(F_, F_->len-1);
+        // }
 
         #if __DEBUG_F4
             printf("G len: %d\n", G->len);

@@ -3,11 +3,11 @@
 #include "basis_tools.h"
 #include "tools.h"
 #include "f4.h"
-// #include "config.h"
+#include "config.h"
+
 #include <time.h>
 
 #define __DEBUG_CHECK 1
-
 
 // First aurgument is the file name. 
 // Second - amount of repeats
@@ -99,9 +99,19 @@ int main(int argc, char** argv){
     #if __DEBUG_CHECK
         GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
         printf("Groebner basis(F4):\n");
+
+        // min_groebner_basis(GBasis.basis, &GBasis.len, poly_ring_ctx);
+
         print_basis(GBasis.basis, GBasis.len, variables, poly_ring_ctx);
         printf("Basis len: %ld\n", GBasis.len);
 
+        FILE* f = fopen("res.txt", "w");
+        for(ulong i = 0; i < GBasis.len; ++i){
+            fq_nmod_mpoly_fprint_pretty(f, GBasis.basis[i], NULL, poly_ring_ctx);
+            fprintf(f, "\n");
+            
+        }
+        fclose(f);
     
         check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
         if (check == 1) printf("This is Groebner basis :)\n");
@@ -113,11 +123,13 @@ int main(int argc, char** argv){
 
 
     #if __DEBUG_CHECK
-        Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
+        // Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
+        Buchberger_result GBasis2 = buchberger(basis, npoly, poly_ring_ctx);
         // Buchberger_result GBasis = log_threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
         // Buchberger_result GBasis = threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
 
         printf("Groebner basis(buchberger):\n");
+        // min_groebner_basis(GBasis2.basis, &GBasis2.len, poly_ring_ctx);
         print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
         printf("Basis len: %ld\n", GBasis2.len);
 

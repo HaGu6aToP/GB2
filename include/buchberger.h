@@ -6,6 +6,7 @@
 #include "flint/ulong_extras.h" // Для randint
 #include "flint/thread_support.h"
 
+
 #define LT(res, f, ctx) fq_nmod_mpoly_get_term(res, f, 0, ctx)
 
 
@@ -16,14 +17,8 @@ void LCM(Polynom monom, const Polynom p1, const Polynom p2, const PolynomRing ct
 
 // Построение S-многочлена полиномов p1 и p2
 void S(Polynom S, const Polynom p1, const Polynom p2, const PolynomRing ctx);
-void log_S(Polynom S, const Polynom p1, const Polynom p2, const PolynomRing ctx);
-
-// Критерий бухбергера
-// 1 - если критерий выполняется, 0 - не выполняется
-int crit(GArray* G, GArray* B, ulong i, ulong j, const Polynom f, const Polynom g, const Polynom lcm, const PolynomRing ctx);
 
 // Алгоритм Бухбергера
-Buchberger_result log_buchberger(const Basis basis, ulong t, const PolynomRing ctx);
 Buchberger_result buchberger(const Basis basis, ulong t, const PolynomRing ctx);
 
 // Критерий S-пар базиса Гребнера
@@ -45,3 +40,6 @@ Buchberger_result threaded_buchberger(const Basis basis, ulong t, ulong threads_
 Buchberger_result threaded_buchberger_v2(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx);
 Buchberger_result log_threaded_buchberger(const Basis basis, ulong t, ulong threads_count, PolynomRing ctx);
 void my_exit(thread_buchberger_data_t* data);
+
+// Минимальный базис Гребнера
+// void min_groebner_basis(Basis basis, ulong* npoly, PolynomRing ctx);
