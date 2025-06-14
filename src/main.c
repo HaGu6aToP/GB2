@@ -123,8 +123,8 @@ int main(int argc, char** argv){
 
 
     #if __DEBUG_CHECK
-        // Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
-        Buchberger_result GBasis2 = buchberger(basis, npoly, poly_ring_ctx);
+        Buchberger_result GBasis2 = buchberger_v2_1(basis, npoly, poly_ring_ctx);
+        // Buchberger_result GBasis2 = buchberger(basis, npoly, poly_ring_ctx);
         // Buchberger_result GBasis = log_threaded_buchberger(basis, npoli, threads_count, poly_ring_ctx);
         // Buchberger_result GBasis = threaded_buchberger_v2(basis, npoli, threads_count, poly_ring_ctx);
 

@@ -925,6 +925,31 @@ void GMI_v2(GArray *F, GArray *P, const Polynom h, int t, PolynomRing ctx)
         i++;
     }
 
+    i = 1;
+    int flag = 0;
+    while(i < _P->len){
+        f = g_array_index(F, Polynom, g_array_index(_P, Pair, i).first);
+        LCM(lcm, f, g, ctx);
+        j = 0;
+        flag = 0;
+        while(j < i){
+            g = g_array_index(F, Polynom, g_array_index(_P, Pair, j).first);
+            LCM(L, g, h, ctx);
+            if (fq_nmod_mpoly_equal(lcm, L, ctx) == 1){
+                flag = 1;
+                break;
+            }
+            j++;
+        }
+
+        if (flag){
+            g_array_remove_index(_P, i);
+            continue;
+        }
+
+        i++;
+    }
+
     i = 0;
     while (i < _P->len)
     {
@@ -939,6 +964,8 @@ void GMI_v2(GArray *F, GArray *P, const Polynom h, int t, PolynomRing ctx)
         else
             i++;
     }
+
+
 
     if (t == F->len)
     {
