@@ -24,6 +24,24 @@ and
 
 ```M->pos[i][M->rwidth[i]]   = map->npiv+j;``` 
 
+Also must all if block in "write B part" on
+
+```
+M->rows[block_row_idx + min_range_blocks - j - 1][M->rwidth[block_row_idx + min_range_blocks - j - 1]]  = B->blocks[l][i].val[k+line_idx];
+
+M->pos[block_row_idx + min_range_blocks - j - 1][M->rwidth[block_row_idx + min_range_blocks - j - 1]]   = map->npiv + k + start_idx;//map->npc_rev[map->npiv+k+start_idx];
+
+M->rwidth[block_row_idx + min_range_blocks - j - 1]++;
+```
+
+And in "write D part"
+
+```map->npc_rev[map->npiv+j]```
+
+to
+
+```map->npiv+j```
+
 (Or I can provide a compiled version by me if someone sees this and asks for it :D). Then follow the installation instructions in GBLA.
 
 ## BenchMark

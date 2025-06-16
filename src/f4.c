@@ -6,7 +6,6 @@
 #include "basis_tools.h"
 #include "sparse_matrix.h"
 
-// #define __DEBUG_F4_POLY_REDUCE 0
 
 // #include <filesystem>
 // #include <fstream>
@@ -446,6 +445,14 @@ void ref3(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
 
     poly_quick_sort(F_monoms, 0, F_monoms->len-1, 1, ctx);
 //-------------------------------------------------------
+
+    #if __DEBUG_F4_POLY_REDUCE
+            printf("F:\n");
+            print_poly_lst(F, ctx);
+            printf("\nF_monoms:\n");
+            print_poly_lst(F_monoms, ctx);
+            printf("\n");
+    #endif
 
     F4_poly_reduce(F_ref, F, F_monoms, field, ctx);
 
@@ -978,6 +985,31 @@ void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomR
             }
             j++;
         }
+        i++;
+    }
+
+    i = 1;
+    int flag = 0;
+    while(i < _P->len){
+        f4p_f = g_array_index(_P, F4Pair, i);
+
+        j = 0;
+        flag = 0;
+        while(j < i){
+            f4p_g = g_array_index(_P, F4Pair, j);
+            
+            if (fq_nmod_mpoly_equal(f4p_f.lcm, f4p_g.lcm, ctx) == 1){
+                flag = 1;
+                break;
+            }
+            j++;
+        }
+
+        if (flag){
+            g_array_remove_index(_P, i);
+            continue;
+        }
+
         i++;
     }
 

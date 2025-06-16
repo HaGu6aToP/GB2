@@ -4,7 +4,9 @@
 #include "gbla/matrix.h"
 #include "gbla/mapping.h"
 
-// #define __DEBUG_F4_POLY_REDUCE 0
+
+
+#define __DEBUG_F4_POLY_REDUCE 0
 
 void print_sparse_matrix_info(const sm_t *M)
 {
@@ -113,6 +115,7 @@ void print_sparse_matrix(const sm_t *M)
         }
         printf("\n");
     }
+
 }
 
 void print_sm_fl_t(const sm_fl_t *M)
@@ -251,6 +254,31 @@ ulong *reduce_sparse_matrix(sm_t *M)
     //     printf("\n");
     //   #endif
 
+    // printf("p = %d\n", M->mod);
+    // printf("npiv = %d\n", map->npiv);
+    // printf("new column ordering: \n");
+    // for (i = 0; i < map->npiv; i++)
+    //     printf("%d ", map->pc_rev[i]);
+
+    // printf("\n");
+
+    // for (i = 0; i < M->ncols - map->npiv; i++)
+    //     printf("%d ", map->npc_rev[i]);
+
+    // printf("\n");
+
+
+    // printf("new row ordering: \n");
+    // for (i = 0; i < M->nrows; i++)
+    //     printf("%d ", map->pri[i]);
+
+    // printf("\n");
+
+    // for (i = 0; i < M->nrows; i++)
+    //     printf("%d ", map->npri[i]);
+
+    // printf("\n");
+    
     reconstruct_matrix_block_no_multiline(M, A, B, D_red, map, nthreads);
     return res;
 }
@@ -288,7 +316,6 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
         M->rwidth[i] = l;
         M->rows[i] = (re_t *)malloc(l * sizeof(re_t));
         M->pos[i] = (ci_t *)malloc(l * sizeof(ci_t));
-
         for (j = 0; j < l; j++)
         {
             fq_nmod_mpoly_get_term_monomial(m, b[i], j, ctx);
@@ -299,7 +326,9 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
                 if (fq_nmod_mpoly_equal(m, monoms[k], ctx))
                 {
                     fq_nmod_get_fmpz(f, coeff, field);
-                    M->rows[i][j] = fmpz_get_ui(f);
+                    // printf("el=%d", fmpz_get_ui(f));
+                    M->rows[i][j] = (int32_t)fmpz_get_ui(f);
+                    // printf(":%d\n", M->rows[i][j]);
                     M->pos[i][j] = k;
                     break;
                 }
@@ -333,6 +362,11 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
     //     for(ulong i = 0; i < F_monoms->len; i++) printf("%ld ", p[i]);
     printf("\n reduced M:\n");
     print_sparse_matrix(M);
+    printf("\nnew column oredering:\n");
+    for (i = 0; i < M->ncols; i++)
+        printf("%ld ", p[i]);
+    printf("\n");
+    
 #endif
 
     for (i = 0; i < M->nrows; i++)

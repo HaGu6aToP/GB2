@@ -849,7 +849,6 @@ int find_min_v2(GArray *F, GArray *P, PolynomRing ctx)
 void GMI_v2(GArray *F, GArray *P, const Polynom h, int t, PolynomRing ctx)
 {
     GArray *_P;
-    GArray *rem_items;
     Polynom *ph;
     Pair *pspair;
     Polynom f, g;
@@ -857,7 +856,6 @@ void GMI_v2(GArray *F, GArray *P, const Polynom h, int t, PolynomRing ctx)
     int i, j, flag1, flag2, flag3;
     //----------------------------------------------------
     _P = g_array_new(FALSE, FALSE, sizeof(Pair));
-    rem_items = g_array_new(FALSE, FALSE, sizeof(ulong));
     fq_nmod_mpoly_init(lcm, ctx);
     fq_nmod_mpoly_init(div, ctx);
     fq_nmod_mpoly_init(lt_h, ctx);
@@ -986,7 +984,6 @@ void GMI_v2(GArray *F, GArray *P, const Polynom h, int t, PolynomRing ctx)
 
     //----------------------------------------------------
     g_array_free(_P, TRUE);
-    g_array_free(rem_items, TRUE);
     fq_nmod_mpoly_clear(lcm, ctx);
     fq_nmod_mpoly_clear(div, ctx);
     fq_nmod_mpoly_clear(lt_h, ctx);
