@@ -1,6 +1,6 @@
 # GB2
 
-This library implements the Buchberg algorithm, the improved Buchberger algorithm and F4 for ideals over finite fields $p < 2^{64}$. This code depends on FLINT, GLib and GBLA.
+This library implements the Buchberg algorithm, the improved Buchberger algorithm and F4 for ideals over finite fields $p < 2^{32}$. This code depends on FLINT, GLib and GBLA.
 
 - FLINT is a C library for doing number theory, freely available under the GNU Lesser General Public License version 3 or later.
 - GBLA is an open source (GPLv2) C library for linear algebra specialized for eliminating matrices generated during Gröbner basis computations in algorithms like F4 or F5. 
