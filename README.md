@@ -24,7 +24,7 @@ and
 
 ```M->pos[i][M->rwidth[i]]   = map->npiv+j;``` 
 
-Also must all if block in "write B part" on
+Also all "if" block in "write B part" on
 
 ```
 M->rows[block_row_idx + min_range_blocks - j - 1][M->rwidth[block_row_idx + min_range_blocks - j - 1]]  = B->blocks[l][i].val[k+line_idx];
