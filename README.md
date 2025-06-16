@@ -47,11 +47,11 @@ to
 ## BenchMark
 
 $$
-    p = 31
+    p = 30011
 $$
 
 
-|system |F4 (sec)|
+<!-- |system |F4 (sec)|
 |-------|--------|
 |bayes148| >7200|
 |cyclic7|0.055|
@@ -70,4 +70,4 @@ $$
 |reimer7|0.478|
 |reimer8|9.269|
 |schwar11|0.502|
-|yang1|>1200|
+|yang1|>1200| -->
