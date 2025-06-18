@@ -40,6 +40,28 @@ ulong max_poly_in_lst(const GArray* g, PolynomRing ctx){
     return res;
 }
 
+void *str_key_destroyer(gpointer data){
+    free(data);
+    return;
+}
+
+Polynom max_poly_in_GHashtable(const GHashTable* hash_table, PolynomRing ctx){
+    Polynom max, f;
+    GHashTableIter i;
+
+    g_hash_table_iter_init(&i, hash_table);
+    g_hash_table_iter_next(&i, NULL, &max);
+
+
+    while(g_hash_table_iter_next(&i, NULL, &f)){
+        if (fq_nmod_mpoly_cmp(f, max, ctx) == 1){
+            max = f;
+        }
+    }
+
+    return max;
+}
+
 
 void get_variables(const char** variables, ulong nvars, const char* str){
     ulong var_len = 0;
@@ -321,7 +343,7 @@ void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx
     
     // printf("hash\n");
 
-   GHashTable* gh = g_hash_table_new(g_str_hash, g_direct_equal);
+   GHashTable* gh = g_hash_table_new_full(g_str_hash, g_direct_equal, str_key_destroyer, NULL);
    for(ulong i = 0; i < g->len; i++){
         for(ulong j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
             h = flint_calloc(1, sizeof(fq_nmod_mpoly_t));
@@ -332,7 +354,7 @@ void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx
                 g_hash_table_insert(gh, key, h);
                 // printf("%s\n", key);
             }
-            free(key);
+            // free(key);
         }
         hp++;
    }
@@ -419,7 +441,7 @@ void free_poly_lst(GArray* g, PolynomRing ctx){
 
 void print_poly_lst(const GArray* lst, const PolynomRing ctx){
     if (lst->len == 0){
-        printf("{}\n");
+        printf("{}");
         return;
     }
 
@@ -431,6 +453,26 @@ void print_poly_lst(const GArray* lst, const PolynomRing ctx){
 
     fq_nmod_mpoly_print_pretty(g_array_index(lst, Polynom, lst->len - 1), NULL, ctx);
     printf(" }");
+}
+
+void print_hash_table(const GHashTable* hash_table, const PolynomRing ctx){
+    if (g_hash_table_size(hash_table) == 0){
+        printf("{}");
+        return;
+    }
+
+    GPtrArray* vals = g_hash_table_get_values_as_ptr_array(hash_table);
+
+    printf("{ ");
+    for(int i = 0; i < vals->len-1; i++){
+        fq_nmod_mpoly_print_pretty((Polynom)vals->pdata[i], NULL, ctx);
+        printf(",\n");
+    }
+
+    fq_nmod_mpoly_print_pretty((Polynom)vals->pdata[vals->len - 1], NULL, ctx);
+    printf(" }");
+
+    g_ptr_array_free(vals, FALSE);
 }
 
 void* __calloc_poly_lst(){

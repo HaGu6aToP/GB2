@@ -188,9 +188,9 @@ int main(int argc, char** argv){
     
     for (int i = 0; i < repeats; i++){
         clock_gettime(CLOCK_MONOTONIC, &start);
-        Buchberger_result GBasis = buchberger_v2_1(basis, npoly, poly_ring_ctx);
+        // Buchberger_result GBasis = buchberger_v2_1(basis, npoly, poly_ring_ctx);
         // threaded_buchberger_v2(basis, npoly, threads_count, poly_ring_ctx);
-        // GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
+        GBasis = F4(basis, npoly, field_ctx, poly_ring_ctx);
         clock_gettime(CLOCK_MONOTONIC, &end);
         // printf("%d\n", GBasis.len);
         free_basis(GBasis.basis, GBasis.len, poly_ring_ctx);

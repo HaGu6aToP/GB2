@@ -23,6 +23,9 @@ ulong max(ulong a, ulong b);
 
 // Максимальный полином в массиве
 ulong max_poly_in_lst(const GArray* g, PolynomRing ctx);
+Polynom max_poly_in_GHashtable(const GHashTable* hash_table, PolynomRing ctx);
+
+void *str_key_destroyer(gpointer data);
 
 // Сумма элементов масисва
 ulong sum(ulong* arr, ulong len);
@@ -57,6 +60,7 @@ void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx
 void free_poly_lst(GArray* g, PolynomRing ctx);
 void head_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx);
 void print_poly_lst(const GArray* lst, const PolynomRing ctx);
+void print_hash_table(const GHashTable* hash_table, const PolynomRing ctx);
 
 void* __calloc_poly_lst();
 void* __calloc_poly();
