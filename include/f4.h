@@ -19,6 +19,8 @@ extern "C" {
 
     // Редуцирование матрицу к верхне треугольному виду
     void F4_poly_reduce(GArray* F_ref, const GArray* F, const GArray* F_monoms, const Field field, const PolynomRing);
+    void F4_linbox_poly_reduce(GArray* F_ref, const GArray* F, const GArray* F_monoms, const Field field, const PolynomRing);
+    void old_F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, const Field field, const PolynomRing ctx);
 
 
 #ifdef __cplusplus

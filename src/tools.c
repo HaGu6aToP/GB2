@@ -1,5 +1,9 @@
 #include "tools.h"
 
+#define HM(res, f, ctx) fq_nmod_mpoly_get_term_monomial(res, f, 0, ctx)
+#define HT(res, f, ctx) fq_nmod_mpoly_get_term(res, f, 0, ctx)
+#define HC(res, f, ctx) fq_nmod_mpoly_get_term_coeff_fq_nmod(res, f, 0, ctx)
+
 ulong max(ulong a, ulong b){
     if (a > b) return a;
     else return b;
@@ -40,7 +44,7 @@ ulong max_poly_in_lst(const GArray* g, PolynomRing ctx){
     return res;
 }
 
-void *str_key_destroyer(gpointer data){
+void str_key_destroyer(gpointer data){
     free(data);
     return;
 }
@@ -343,7 +347,7 @@ void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx
     
     // printf("hash\n");
 
-   GHashTable* gh = g_hash_table_new_full(g_str_hash, g_direct_equal, str_key_destroyer, NULL);
+   GHashTable* gh = g_hash_table_new_full(g_str_hash, g_str_equal, str_key_destroyer, NULL);
    for(ulong i = 0; i < g->len; i++){
         for(ulong j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
             h = flint_calloc(1, sizeof(fq_nmod_mpoly_t));
@@ -480,4 +484,105 @@ void* __calloc_poly_lst(){
 }
 void* __calloc_poly(){
     return flint_calloc(1, sizeof(fq_nmod_mpoly_struct));
+}
+
+int monom_divides(const Polynom a, const Polynom b, const PolynomRing ctx){
+    ulong nvars = fq_nmod_mpoly_ctx_nvars(ctx);
+    ulong expa[nvars], expb[nvars];
+
+    fq_nmod_mpoly_get_term_exp_ui(expa, a, 0, ctx);
+    fq_nmod_mpoly_get_term_exp_ui(expb, b, 0, ctx);
+
+    for(ulong i = 0; i < nvars; i++)
+        if (expa[i] < expb[i]) return 0;
+
+    return 1;
+}
+
+void reduce_groebner_basis(GArray* G, const PolynomRing ctx){
+    if (G->len == 0) return;
+
+    int flag;
+    Basis basis;
+    ulong i, j;
+
+    fq_nmod_mpoly_t mi, mj;
+
+    fq_nmod_mpoly_init(mi, ctx);
+    fq_nmod_mpoly_init(mj, ctx);
+    flag = 0;
+
+    while(flag == 0){
+        basis = (Basis)G->data;
+        flag = 1;
+        for(i = 0; i < G->len-1; i++){
+            HM(mi, basis[i], ctx);
+            for(j = 0; j < G->len; j++){
+                if (i == j) continue;
+                HM(mj, basis[j], ctx);
+                if (monom_divides(mi, mj, ctx)){
+                    flag = 0;
+                    // fq_nmod_mpoly_print_pretty(basis[i], NULL, ctx);
+                    // printf("|");
+                    // fq_nmod_mpoly_print_pretty(basis[j], NULL, ctx);
+                    // printf("\n");
+                    g_array_remove_index(G, i);
+                    break;
+                }
+            }
+            if (!flag) break;
+        }
+    }
+
+    fq_nmod_mpoly_clear(mi, ctx);
+    fq_nmod_mpoly_clear(mj, ctx);
+}
+
+void reduce_groebner_basis_relative(GArray* G, const GArray* F, const PolynomRing ctx){
+    if (G->len || F->len == 0) return;
+
+    int flag;
+    Basis Gbasis;
+    Basis Fbasis;
+    ulong i, j;
+
+    fq_nmod_mpoly_t mi, mj;
+
+    fq_nmod_mpoly_init(mi, ctx);
+    fq_nmod_mpoly_init(mj, ctx);
+
+    flag = 0;
+    Fbasis = (Basis)F->data;
+    while(!flag){
+        Gbasis = (Basis)G->data;
+        flag = 1;
+        for(i = 0; i < G->len; i++){
+            HM(mi, Gbasis[i], ctx);
+            for(j = 0; j < F->len; j++){
+                HM(mj, Fbasis[j], ctx);
+                if (monom_divides(mi, mj, ctx)){
+                    flag = 0;
+                    g_array_remove_index(G, i);
+                    break;
+                }
+            }
+            if (!flag) break;
+        }
+    }
+
+    fq_nmod_mpoly_clear(mi, ctx);
+    fq_nmod_mpoly_clear(mj, ctx);
+}
+
+void remove_pairs_containig(GArray* P, const Polynom h, const PolynomRing ctx){
+    if (P->len == 0) return;
+    F4Pair f4p;
+    ulong counter = 0;
+    while(counter < P->len){
+        f4p = g_array_index(P, F4Pair, counter);
+        if (fq_nmod_mpoly_equal(h, f4p.f, ctx) || fq_nmod_mpoly_equal(h, f4p.g, ctx)){
+            g_array_remove_index(P, counter);
+        }
+        counter++;
+    }
 }

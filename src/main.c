@@ -112,19 +112,19 @@ int main(int argc, char** argv){
             // fprintf(f, "len %d: ", fq_nmod_mpoly_length(GBasis.basis[i], poly_ring_ctx));
             if (fq_nmod_mpoly_length(GBasis.basis[i], poly_ring_ctx) > maxlen) maxlen = fq_nmod_mpoly_length(GBasis.basis[i], poly_ring_ctx);
             fq_nmod_mpoly_fprint_pretty(f, GBasis.basis[i], NULL, poly_ring_ctx);
-            fprintf(f, "\n");
+            fprintf(f, ",\n");
             
         }
         fprintf(f, "Max poly-len: %d", maxlen);
         fclose(f);
     
-        check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
-        if (check == 1) printf("This is Groebner basis :)\n");
-        else printf("This is not Groebner basis :c\n");
-        free_basis(GBasis.basis, GBasis.len, poly_ring_ctx); 
+        // check = is_groebner_basis(GBasis.basis, GBasis.len, poly_ring_ctx);
+        // if (check == 1) printf("This is Groebner basis :)\n");
+        // else printf("This is not Groebner basis :c\n");
+        // free_basis(GBasis.basis, GBasis.len, poly_ring_ctx); 
     #endif
 
-    // printf("\n");
+    // printf("\n"); 
 
 
     #if __DEBUG_CHECK
@@ -138,23 +138,23 @@ int main(int argc, char** argv){
         print_basis(GBasis2.basis, GBasis2.len, variables, poly_ring_ctx);
         printf("Basis len: %ld\n", GBasis2.len);
 
-        f = fopen("Buchverger_res.txt", "w");
+        f = fopen("Buchberger_res.txt", "w");
         fprintf(f, "Basis len: %ld\n", GBasis2.len);
         maxlen = 0;
         for(ulong i = 0; i < GBasis2.len; ++i){
-            fprintf(f, "len %d: ", fq_nmod_mpoly_length(GBasis2.basis[i], poly_ring_ctx));
+            // fprintf(f, "len %d: ", fq_nmod_mpoly_length(GBasis2.basis[i], poly_ring_ctx));
             if (fq_nmod_mpoly_length(GBasis2.basis[i], poly_ring_ctx) > maxlen) maxlen = fq_nmod_mpoly_length(GBasis2.basis[i], poly_ring_ctx);
             fq_nmod_mpoly_fprint_pretty(f, GBasis2.basis[i], NULL, poly_ring_ctx);
-            fprintf(f, "\n");
+            fprintf(f, ",\n");
             
         }
         fprintf(f, "Max poly-len: %d", maxlen);
         fclose(f);
 
-        check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
-        if (check == 1) printf("This is Groebner basis :)\n");
-        else printf("This is not Groebner basis :c\n");
-        free_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+        // check = is_groebner_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
+        // if (check == 1) printf("This is Groebner basis :)\n");
+        // else printf("This is not Groebner basis :c\n");
+        // free_basis(GBasis2.basis, GBasis2.len, poly_ring_ctx);
     #endif
 
 

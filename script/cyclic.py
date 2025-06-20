@@ -2,6 +2,7 @@ from sys import argv
 
 _, n = argv
 n = int(n)
+n += 1
 
 res = ""
 res += str(n) + "\n" + str(7) + "\n" + str(n) + "\n"

@@ -595,6 +595,58 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
 
 }
 
+// LinBox reduce
+void ref4(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
+    GArray* F_monoms;
+    Polynom f;
+    Polynom *hp, *hg;
+    fq_nmod_mpoly_t m, sum, g;
+    fq_nmod_mat_t M;
+    fq_nmod_t x, y;
+    ulong i, j, k;
+    slong r, p_len, t;
+//-------------------------------------------------------
+    F_monoms = __calloc_poly_lst();
+    monom_lst_from_poly_lst(F_monoms, F, ctx);
+    init_poly(m, ctx);
+    init_poly(sum, ctx);
+    init_poly(g, ctx);
+    p_len = MAX(F_monoms->len, F->len);
+
+    poly_quick_sort(F_monoms, 0, F_monoms->len-1, 1, ctx);
+//-------------------------------------------------------
+
+    #if __DEBUG_F4_POLY_REDUCE
+            printf("F:\n");
+            print_poly_lst(F, ctx);
+            printf("\nF_monoms:\n");
+            print_poly_lst(F_monoms, ctx);
+            printf("\n");
+    #endif
+
+    F4_linbox_poly_reduce(F_ref, F, F_monoms, field, ctx);
+
+    #if __DEBUG_F4_POLY_REDUCE
+        printf("F:\n");
+        print_poly_lst(F, ctx);
+        printf("\nF_monoms:\n");
+        print_poly_lst(F_monoms, ctx);
+        printf("\n");
+
+        printf("F_ref:\n");
+        print_poly_lst(F_ref, ctx);
+        printf("\n");
+        // sleep(1000);
+    #endif
+    
+//-------------------------------------------------------
+    free_poly_lst(F_monoms, ctx);
+    clear_poly(m, ctx);
+    clear_poly(sum, ctx);
+    clear_poly(g, ctx);
+}
+
+// GLIB reduce
 void ref3(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
     GArray* F_monoms;
     Polynom f;
@@ -849,6 +901,7 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     sparse_matrix_clear(sparse_M);
 }
 
+// FLINT LU reduce
 void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
     GArray* F_monoms;
     Polynom f;
@@ -1071,19 +1124,6 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
 }
 
 
-int monom_divides(const Polynom a, const Polynom b, const PolynomRing ctx){
-    ulong nvars = fq_nmod_mpoly_ctx_nvars(ctx);
-    ulong expa[nvars], expb[nvars];
-
-    fq_nmod_mpoly_get_term_exp_ui(expa, a, 0, ctx);
-    fq_nmod_mpoly_get_term_exp_ui(expb, b, 0, ctx);
-
-    for(ulong i = 0; i < nvars; i++)
-        if (expa[i] < expb[i]) return 0;
-
-    return 1;
-}
-
 
 // Критерий
 void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomRing ctx){
@@ -1218,6 +1258,112 @@ void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomR
 }
 
 
+void reduced_F4_GMI(GArray* P, GArray* G, GArray* F_, const PolynomRing ctx){
+    // Предполается, что P тоже NULL. Первый шаг F4
+    if (F_ == NULL){
+        reduce_groebner_basis(G, ctx);
+        return;
+    }
+
+    // printf("F(%d): \n", F_->len);
+    // print_poly_lst(F_, ctx);
+    // printf("\n\n");
+
+    // Удаляем лишние полиномы из F_
+    reduce_groebner_basis(F_, ctx); // Относительно самого себя
+
+    // printf("F(%d) относительно F: \n", F_->len);
+    // print_poly_lst(F_, ctx);
+    // printf("\n\n");
+
+    // относительно G
+    reduce_groebner_basis_relative(F_, G, ctx);
+
+    // printf("F(%d) относительно F и G: \n", F_->len);
+    // print_poly_lst(F_, ctx);
+    // printf("\n\n");
+
+    // printf("G(%d): \n", G->len);
+    // print_poly_lst(G, ctx);
+    // printf("\n\n");
+
+    // теперь тоже для G
+    int flag;
+    Basis Gbasis;
+    Basis Fbasis;
+    ulong i, j;
+
+    fq_nmod_mpoly_t mi, mj;
+
+    fq_nmod_mpoly_init(mi, ctx);
+    fq_nmod_mpoly_init(mj, ctx);
+
+
+    Fbasis = (Basis)F_->data;
+    
+    while(!flag){
+        Gbasis = (Basis)G->data;
+        flag = 1;
+
+        for(i = 0; i < G->len; i++){
+            HM(mi, Gbasis[i], ctx);
+
+            // Относительно себя
+            for(j = 0; j < G->len; j++){
+                if (i == j) continue;
+                HM(mj, Gbasis[j], ctx);
+
+                if(monom_divides(mi, mj, ctx)){
+                    flag = 0;
+                    
+                    // Нужно удалить лишние наборы 
+                    remove_pairs_containig(P, Gbasis[i], ctx);
+
+                    // Удаляем полином
+                    g_array_remove_index(G, i);
+                    break;
+                }
+            }
+
+            if (!flag) break;
+
+            // Относительно F
+            for(j = 0; j < F_->len; j++){
+                HM(mj, Fbasis[j], ctx);
+
+                if(monom_divides(mi, mj, ctx)){
+                    flag = 0;
+                    remove_pairs_containig(P, Gbasis[i], ctx);
+                    g_array_remove_index(G, i);
+                    break;
+                }
+            }
+
+            if (!flag) break;
+        }
+    }
+
+    fq_nmod_mpoly_clear(mi, ctx);
+    fq_nmod_mpoly_clear(mj, ctx);
+
+    // printf("Конец: ");
+
+    // printf("F(%d): \n", F_->len);
+    // print_poly_lst(F_, ctx);
+    // printf("\n\n");
+
+    // printf("G(%d): \n", G->len);
+    // print_poly_lst(G, ctx);
+    // printf("\n\n");
+
+    // Теперь можно использовать GMI и обновить набор пар
+    Basis temp = (Basis)F_->data;
+    for(i = 0; i < F_->len; i++){
+        F4_GMI(P, G, temp[i], G->len, ctx);
+        g_array_append_val(G, temp[i]);
+    }
+}
+
 #ifdef __cplusplus
 extern "C"
 #endif
@@ -1237,12 +1383,45 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     P = g_array_new(FALSE, FALSE, sizeof(F4Pair));
     Pd = g_array_new(FALSE, FALSE, sizeof(F4Pair));
 
+    // printf("LOL");
+    fq_nmod_t c;
+    fmpz_t t;
+    fmpz_t inv_t;
+    fmpz_t mod;
+    fmpz_init(t);
+    fmpz_init(inv_t);
+    fmpz_init(mod);
+    fq_nmod_init(c, ctx);
+
+    // fmpz_set_ui(mod, fq_nmod_ctx_prime(field));
+    fq_nmod_ctx_order(mod, field);
+    
     for(i = 0; i < npoly; i++){
         g = __calloc_poly();
         init_poly(g, ctx);
-        set_poly(g, F[i], ctx);
+        // set_poly(g, F[i], ctx);
+
+        // Нормируем многочлен g
+        HC(c, F[i], ctx);
+        fq_nmod_get_fmpz(t, c, ctx);
+        fmpz_invmod(inv_t, t, mod);
+        fq_nmod_set_fmpz(c, inv_t, ctx);
+
+        // fmpz_print(mod);
+        // printf("\n");
+        // fmpz_print(t);
+        // printf(" inv: ");
+        // fmpz_print(inv_t);
+        // printf("\n");
+
+        fq_nmod_mpoly_scalar_mul_n_fq(g, F[i], inv_t, ctx);
         g_array_append_val(G, g);
     }
+
+    fmpz_clear(t);
+    fmpz_clear(inv_t);
+    fmpz_clear(mod);
+    fq_nmod_clear(c, ctx);
 
     // Формирование пар с учетом lcm и gcd критерия
     for(i = 0; i < npoly; i++)
@@ -1294,6 +1473,7 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
         #endif
 
         
+        // reduced_F4_GMI(P, G, F_, ctx);
         temp = (Basis)F_->data;
         for(i = 0; i < F_->len; i++){
             F4_GMI(P, G, temp[i], G->len, ctx);
@@ -1369,6 +1549,7 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     //     clear_poly(s_mod, ctx);
     // #endif
 //-------------------------------------------------------
+    // reduce_groebner_basis(G, ctx);
     Basis res = from_garray(G);
     F4Result resres = {res, G->len};
     // free_poly_lst(G, ctx);

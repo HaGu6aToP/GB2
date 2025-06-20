@@ -25,7 +25,7 @@ ulong max(ulong a, ulong b);
 ulong max_poly_in_lst(const GArray* g, PolynomRing ctx);
 Polynom max_poly_in_GHashtable(const GHashTable* hash_table, PolynomRing ctx);
 
-void *str_key_destroyer(gpointer data);
+void str_key_destroyer(gpointer data);
 
 // Сумма элементов масисва
 ulong sum(ulong* arr, ulong len);
@@ -65,6 +65,13 @@ void print_hash_table(const GHashTable* hash_table, const PolynomRing ctx);
 void* __calloc_poly_lst();
 void* __calloc_poly();
 
+void reduce_groebner_basis(GArray* G, const PolynomRing ctx);
+void reduce_groebner_basis_relative(GArray* G, const GArray* F, const PolynomRing ctx);
+
+// Удалить наборы, содержащие в себе h
+void remove_pairs_containig(GArray* P, const Polynom h, const PolynomRing ctx);
+
+int monom_divides(const Polynom a, const Polynom b, const PolynomRing ctx);
 
 #ifdef __cplusplus
 }

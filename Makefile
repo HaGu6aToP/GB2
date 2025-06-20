@@ -51,7 +51,7 @@ target = main
 
 # Получение списка исходных файлов C и C++
 src_c =  $(wildcard ./src/*.c)
-src_cpp = $(wildcard ./src/*.cpp)
+src_cpp = $(wildcard ./src/*.C)
 srcnames = $(notdir $(src_c)) $(notdir $(src_cpp))
 srcdir = ./src/
 incdir = ./include/
@@ -59,7 +59,7 @@ src = $(addprefix $(srcdir), $(srcnames))
 
 # Получение списка объектных файлов
 obj_c = $(patsubst %.c, %.o, $(src_c))
-obj_cpp = $(patsubst %.cpp, %.o, $(src_cpp))
+obj_cpp = $(patsubst %.C, %.o, $(src_cpp))
 obj = $(obj_c) $(obj_cpp)
 
    
@@ -78,12 +78,16 @@ ldflags = -L/usr/lib/x86_64-linux-gnu \
 		-L/home/kirill/gbla-0.2 \
 		-lmpfr -lflint -lgmp -lglib-2.0 -lgbla -lm -O2
 
+cppflags = -lntl -lgivaro -llinbox -lblas -llapack
+
 # Правила компиляции
 $(target) : $(obj)
-	g++ $(obj) -std=c++20 -o $(target) $(ldflags)
+	g++ $(obj) -std=c++11 -o $(target) $(ldflags) $(cppflags)
 
-%.o : %.cpp
-	g++ -fpermissive -std=c++20 -c $< -o $@ $(cflags)
+%.o : %.C
+	g++ -std=c++11 -c $< -o $@  $(cflags) $(cppflags)
+# 	g++ -fpermissive -std=c++20 -c $< -o $@ $(cflags)
+
 
 %.o : %.c
 	gcc -c $< -o $@ $(cflags)
