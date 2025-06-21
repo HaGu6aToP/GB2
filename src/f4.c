@@ -265,7 +265,7 @@ void F4_select(GArray* Pd, GArray* P, const PolynomRing ctx){
 }
 
 // preprocessing с массивами
-void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
+void old_old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
     F4Pair f4p, *pf4p;
     Polynom new_poly, f;
     Polynom* hp;
@@ -412,7 +412,7 @@ void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing
 }
 
 // preprocessing с хеш-таблицами вместо массивов
-void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
+void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
     F4Pair f4p, *pf4p;
     Polynom new_poly, f;
     Polynom* hp;
@@ -424,8 +424,8 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
     ulong i, j, k;
     char* str;
 // -------------------------------------------------
-    done = g_hash_table_new_full(g_str_hash, g_str_equal, str_key_destroyer, NULL);
-    sub =  g_hash_table_new_full(g_str_hash, g_str_equal, str_key_destroyer, NULL);
+    done = g_hash_table_new_full(g_str_hash, g_str_equal, simple_key_destroyer, NULL);
+    sub =  g_hash_table_new_full(g_str_hash, g_str_equal, simple_key_destroyer, NULL);
     init_poly(m, ctx);
     init_poly(div, ctx);
     
@@ -594,6 +594,203 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
     g_hash_table_destroy(sub);
 
 }
+
+// preprocessing с новым ключом
+void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
+    F4Pair f4p, *pf4p;
+    Polynom new_poly, f;
+    Polynom* hp;
+    Polynom h;
+    fq_nmod_mpoly_t m, div;
+    GHashTable* done;
+    GHashTable* sub;
+    gpointer* gp;
+    ulong i, j, k;
+    ulong *key, *new_key, ulong_key;
+// -------------------------------------------------
+    done = g_hash_table_new_full(g_int64_hash, g_int64_equal, simple_key_destroyer, NULL);
+    sub =  g_hash_table_new_full(g_int64_hash, g_int64_equal, simple_key_destroyer, NULL);
+    init_poly(m, ctx);
+    init_poly(div, ctx);
+    
+
+    // Формирование множеств Left и Right
+    pf4p = (F4Pair*)Pd->data;
+    for(i = 0; i < Pd->len; i++){
+        new_poly = __calloc_poly();
+        init_poly(new_poly, ctx);
+        fq_nmod_mpoly_mul(new_poly, pf4p[i].t_f, pf4p[i].f, ctx);
+        g_array_append_val(F, new_poly);
+
+        new_poly = __calloc_poly();
+        init_poly(new_poly, ctx);
+        fq_nmod_mpoly_mul(new_poly, pf4p[i].t_g, pf4p[i].g, ctx);
+        g_array_append_val(F, new_poly);
+
+        free_F4Pair(&pf4p[i], ctx);
+    }
+    g_array_remove_range(Pd, 0, Pd->len);
+
+    // Формирование множества done и sub
+    for(i = 0; i < F->len; i++){
+        h = g_array_index(F, Polynom, i);
+        HM(m, h, ctx);
+
+        // Получаем ключ
+        ulong_key = monom_hash(m, ctx);
+        
+        // Проверяем есть ли уже этот моном, если нет добовляем
+        if (g_hash_table_lookup(done, &ulong_key) == NULL){
+            // printf("inserting ");
+            f = __calloc_poly();
+            init_poly(f, ctx);
+            set_poly(f, m, ctx);
+
+            key = malloc(sizeof(ulong));
+            *key = ulong_key;
+
+            // printf("str = %s\n", str);
+            g_hash_table_insert(done, key, f);
+            // printf("done(%d): \n", g_hash_table_size(done));
+            // print_hash_table(done, ctx);
+            // printf("\n");
+        }
+
+        for(j = 1; j < fq_nmod_mpoly_length(h, ctx); j++){
+            fq_nmod_mpoly_get_term_monomial(m, h, j, ctx);
+
+            ulong_key = monom_hash(m, ctx);
+
+            if (g_hash_table_lookup(sub, &ulong_key) == NULL){
+                f = __calloc_poly();
+                init_poly(f, ctx);
+                set_poly(f, m, ctx);
+
+                key = malloc(sizeof(ulong));
+                *key = ulong_key;
+
+                g_hash_table_insert(sub, key, f);
+            }
+        }
+    }
+
+    #if __DEBUG_F4
+        printf("F:\n");
+        print_poly_lst(F, ctx);
+        printf("\n");
+        printf("done: \n");
+        print_hash_table(done, ctx);
+        printf("\nsub: \n");
+        print_hash_table(sub, ctx);
+        printf("\n");
+    #endif
+
+
+    // Основной цикл
+    while(g_hash_table_size(sub) > 0){
+
+
+        // Находим наибольший моном и перемещаем его из sub в done
+        f = max_poly_in_GHashtable(sub, ctx);
+
+        #if __DEBUG_F4
+            printf("Наибольший моном: ");
+            fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+            printf("\n");
+        #endif
+
+        key = malloc(sizeof(ulong));
+        *key = monom_hash(f, ctx);
+        // if (g_hash_table_size(sub) == 1)
+        //     g_hash_table_remove_all(sub);
+        // else
+            g_hash_table_remove(sub, key);
+        g_hash_table_insert(done, key, f);
+
+        #if __DEBUG_F4
+            printf("done(%d): \n", g_hash_table_size(done));
+            print_hash_table(done, ctx);
+            printf("\nsub(%d): \n", g_hash_table_size(sub));
+            print_hash_table(sub, ctx);
+            printf("\n");
+            sleep(3);
+        #endif
+
+        // Проверяем моном f на делимость некоторым LM(G[i])
+        for (i = 0; i < G->len; i++){
+            h = g_array_index(G, Polynom, i);
+            HM(m, h, ctx);
+
+
+            if (fq_nmod_mpoly_divides(div, f, m, ctx) == 1){
+                #if __DEBUG_F4
+                    printf("selected monom - ");
+                    fq_nmod_mpoly_print_pretty(f, NULL, ctx);
+                    printf(" divides by HT(");
+                    fq_nmod_mpoly_print_pretty(h, NULL, ctx);
+                    printf(")=");
+                    fq_nmod_mpoly_print_pretty(m, NULL, ctx);
+                    printf("\n");
+                    printf("div=");
+                    fq_nmod_mpoly_print_pretty(div, NULL, ctx);
+                    printf("\n");
+                #endif
+
+                // Добавляем новый полином
+                new_poly = __calloc_poly();
+                init_poly(new_poly, ctx);
+                fq_nmod_mpoly_mul(new_poly, div, h, ctx);
+                g_array_append_val(F, new_poly);
+
+                #if __DEBUG_F4
+                    printf("new poly - ");
+                    fq_nmod_mpoly_print_pretty(new_poly, NULL, ctx);
+                    printf("\n");
+                #endif
+
+                // Обновляем множество sub
+                for(j = 1; j < fq_nmod_mpoly_length(new_poly, ctx); j++){
+                    fq_nmod_mpoly_get_term_monomial(m, new_poly, j, ctx);
+
+                    
+                    ulong_key = monom_hash(m, ctx);
+
+                    if (g_hash_table_lookup(sub, &ulong_key) == NULL){
+                        f = __calloc_poly();
+                        init_poly(f, ctx);
+                        set_poly(f, m, ctx);
+
+                        key = malloc(sizeof(ulong));
+                        *key = ulong_key;
+
+                        g_hash_table_insert(sub, key, f);
+                    }
+                }
+                break;
+
+            }
+        }
+
+    }
+
+
+    // Особождение данных
+    clear_poly(m, ctx);
+    clear_poly(div, ctx);
+
+
+    GPtrArray* vals = g_hash_table_get_values_as_ptr_array(done);
+    for(i = 0; i < vals->len; i++){
+        clear_poly((Polynom)vals->pdata[i], ctx);
+    }
+
+    g_ptr_array_free(vals, TRUE);
+
+    g_hash_table_destroy(done);
+    g_hash_table_destroy(sub);
+
+}
+
 
 // LinBox reduce
 void ref4(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
@@ -1257,7 +1454,7 @@ void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomR
     clear_poly(hm_h, ctx);
 }
 
-
+// Не работает
 void reduced_F4_GMI(GArray* P, GArray* G, GArray* F_, const PolynomRing ctx){
     // Предполается, что P тоже NULL. Первый шаг F4
     if (F_ == NULL){
@@ -1549,7 +1746,7 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     //     clear_poly(s_mod, ctx);
     // #endif
 //-------------------------------------------------------
-    // reduce_groebner_basis(G, ctx);
+    reduce_groebner_basis(G, ctx);
     Basis res = from_garray(G);
     F4Result resres = {res, G->len};
     // free_poly_lst(G, ctx);

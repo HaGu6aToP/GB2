@@ -366,6 +366,174 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
     fq_nmod_t coeff;
     Polynom new_poly;
     fmpz_t f;
+    ulong* key;
+    MatrixElement* el;
+
+    // Отображение мономов полиномов на столбцы матрицы
+    GHashTable* map;
+
+    //-------------------------------------------------------
+    M = (sm_t *)malloc(sizeof(sm_t));
+    M->mod = fmpz_get_ui(&field->p);
+    M->ncols = F_monoms->len;
+    M->nrows = F->len;
+    M->rows = (re_t **)malloc(M->nrows * sizeof(re_t *));
+    M->pos = (ci_t **)malloc(M->nrows * sizeof(ci_t *));
+    M->rwidth = (ci_t *)malloc(M->nrows * sizeof(ci_t));
+
+    fq_nmod_mpoly_init(m, ctx);
+    fq_nmod_mpoly_init(sum, ctx);
+    fq_nmod_init(coeff, field);
+    fmpz_init(f);
+    map = g_hash_table_new_full(g_int64_hash, g_int64_equal, simple_key_destroyer, NULL);
+
+    polynoms = (Basis)F->data;
+    monoms = (Basis)F_monoms->data;
+
+    #if __DEBUG_F4_POLY_REDUCE
+        printf("F_monoms:\n");
+        print_poly_lst(F_monoms, ctx);
+        printf("\n");
+
+        printf("F:\n");
+        print_poly_lst(F, ctx);
+        printf("\n");
+    #endif
+
+    for(i = 0; i < F_monoms->len; i++){
+        MatrixElement* me = calloc(1, sizeof(MatrixElement));
+        me->j=i;
+        me->p=monoms[i];
+
+        key = malloc(sizeof(ulong));
+        *key = monom_hash(monoms[i], ctx);
+
+        g_hash_table_insert(map, key, me);
+    }
+
+    #if __DEBUG_F4_POLY_REDUCE
+        printf("map:\n");
+        print_mymap(map, ctx);
+        printf("\n");
+    #endif
+    //-------------------------------------------------------
+
+    key = malloc(sizeof(ulong));
+    for (i = 0; i < F->len; i++)
+    {
+        l = fq_nmod_mpoly_length(polynoms[i], ctx);
+
+        M->rwidth[i] = l;
+        M->rows[i] = (re_t *)malloc(l * sizeof(re_t));
+        M->pos[i] = (ci_t *)malloc(l * sizeof(ci_t));
+        
+        for (j = 0; j < l; j++)
+        {
+            fq_nmod_mpoly_get_term_monomial(m, polynoms[i], j, ctx);
+            fq_nmod_mpoly_get_term_coeff_fq_nmod(coeff, polynoms[i], j, ctx);
+
+            *key = monom_hash(m, ctx);
+
+            #if __DEBUG_F4_POLY_REDUCE
+                printf("monom: %s\n", str);
+            #endif
+
+            el = g_hash_table_lookup(map, key);
+            if (el == NULL) {
+                printf("Poly reduce mapping monoms to columns error.\n");
+                exit(-1);
+            }
+            fq_nmod_get_fmpz(f, coeff, field);
+            M->rows[i][j] = (int32_t)fmpz_get_ui(f);
+            M->pos[i][j] = el->j;
+        }
+    }
+    free(key);
+
+    sort_schreyer_matrix(M);
+    normalize_schreyer_input_rows(M);
+
+    #if __DEBUG_F4_POLY_REDUCE
+        ulong nnz = 0;
+        for (ulong i = 0; i < M->nrows; i++)
+            nnz += M->rwidth[i];
+
+        M->nnz = nnz;
+
+        printf("M:\n");
+        M->density = compute_density(M->nnz, M->nrows, M->ncols);
+        print_sparse_matrix_info(M);
+        print_sparse_matrix(M);
+
+        print_sparse_matrix_to_end_file("res.txt", "\nMatrix:\n", M);
+
+        if (M->ncols > 500 || M->nrows > 500)
+            print_sparse_matrix_to_file("TT.txt", M);
+    #endif
+
+    ulong *p = reduce_sparse_matrix(M);
+
+    #if __DEBUG_F4_POLY_REDUCE
+        //     printf("columns order:\n");
+        //     for(ulong i = 0; i < F_monoms->len; i++) printf("%ld ", p[i]);
+        printf("\n reduced M:\n");
+        print_sparse_matrix(M);
+        printf("\nnew column oredering:\n");
+        for (i = 0; i < M->ncols; i++)
+            printf("%ld ", p[i]);
+        printf("\n");
+
+        print_sparse_matrix_to_end_file("res.txt", "\nReduced matrix:\n", M);
+        
+    #endif
+
+    for (i = 0; i < M->nrows; i++)
+    {
+        new_poly = flint_calloc(1, sizeof(fq_nmod_mpoly_t));
+        fq_nmod_mpoly_init(new_poly, ctx);
+        fq_nmod_mpoly_zero(new_poly, ctx);
+
+        for (j = 0; j < M->rwidth[i]; j++)
+        {
+            // fq_nmod_mpoly_set(m, g_array_index(F_monoms, Polynom, p[M->pos[i][j]]), ctx);
+            fq_nmod_set_ui(coeff, M->rows[i][j], field);
+            fq_nmod_mpoly_scalar_mul_fq_nmod(m, g_array_index(F_monoms, Polynom, p[M->pos[i][j]]), coeff, ctx);
+            fq_nmod_mpoly_add(sum, new_poly, m, ctx);
+            fq_nmod_mpoly_set(new_poly, sum, ctx);
+        }
+
+        g_array_append_val(F_ref, new_poly);
+    }
+    //-------------------------------------------------------
+    fq_nmod_mpoly_clear(m, ctx);
+    fq_nmod_mpoly_clear(sum, ctx);
+    fq_nmod_clear(coeff, field);
+    fmpz_clear(f);
+
+
+    GPtrArray* vals = g_hash_table_get_values_as_ptr_array(map);
+    for(i = 0; i < vals->len; i++)
+        free((MatrixElement*)vals->pdata[i]);
+
+    g_hash_table_destroy(map);
+
+    free(M->rows);
+    free(M->pos);
+    free(M->rwidth);
+    free(M);
+    free(p);
+
+}
+
+
+void old_F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, const Field field, const PolynomRing ctx){
+    sm_t *M;
+    ulong i, j, k, l;
+    fq_nmod_mpoly_t m, sum;
+    Basis polynoms, monoms;
+    fq_nmod_t coeff;
+    Polynom new_poly;
+    fmpz_t f;
     char* str;
     MatrixElement* el;
 
@@ -385,7 +553,7 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
     fq_nmod_mpoly_init(sum, ctx);
     fq_nmod_init(coeff, field);
     fmpz_init(f);
-    map = g_hash_table_new_full(g_str_hash, g_str_equal, str_key_destroyer, NULL);
+    map = g_hash_table_new_full(g_str_hash, g_str_equal, simple_key_destroyer, NULL);
 
     polynoms = (Basis)F->data;
     monoms = (Basis)F_monoms->data;
@@ -505,6 +673,11 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
     fq_nmod_clear(coeff, field);
     fmpz_clear(f);
 
+
+    GPtrArray* vals = g_hash_table_get_values_as_ptr_array(map);
+    for(i = 0; i < vals->len; i++)
+        free((MatrixElement*)vals->pdata[i]);
+
     g_hash_table_destroy(map);
 
     free(M->rows);
@@ -516,7 +689,7 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
 }
 
 
-void old_F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, const Field field, const PolynomRing ctx)
+void old_old_F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, const Field field, const PolynomRing ctx)
 {
     sm_t *M;
     ulong i, j, k, l;

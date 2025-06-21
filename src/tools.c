@@ -44,7 +44,7 @@ ulong max_poly_in_lst(const GArray* g, PolynomRing ctx){
     return res;
 }
 
-void str_key_destroyer(gpointer data){
+void simple_key_destroyer(gpointer data){
     free(data);
     return;
 }
@@ -339,15 +339,50 @@ void monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx
     Polynom* hp;
     Polynom h;
     Polynom f;
+
+    hp = (Polynom*)g->data;
+    ulong* key;
+    
+   GHashTable* gh = g_hash_table_new_full(g_int64_hash, g_int64_equal, simple_key_destroyer, NULL);
+   for(ulong i = 0; i < g->len; i++){
+        for(ulong j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
+            h = flint_calloc(1, sizeof(fq_nmod_mpoly_t));
+            fq_nmod_mpoly_init(h, ctx);
+            fq_nmod_mpoly_get_term_monomial(h, *hp, j, ctx);
+
+            key = malloc(sizeof(ulong));
+            *key = monom_hash(h, ctx);
+
+            // printf("key=%ld, monom=%s\n", *key, fq_nmod_mpoly_get_str_pretty(h, NULL, ctx));
+
+            if (g_hash_table_lookup(gh, key) == NULL){
+                g_hash_table_insert(gh, key, h);
+            }
+        }
+        hp++;
+   }
+
+   GPtrArray* vals = g_hash_table_get_values_as_ptr_array(gh);
+   g_array_insert_vals(res, 0, vals->pdata, g_hash_table_size(gh));
+
+   g_ptr_array_free(vals, TRUE);
+   g_hash_table_destroy(gh);
+}
+
+void old_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRing ctx){
+    Polynom* hp;
+    Polynom h;
+    Polynom f;
     // fq_nmod_mpoly_t m;
     // fq_nmod_mpoly_init(m, ctx);
+    
 
     hp = (Polynom*)g->data;
     char* key;
     
     // printf("hash\n");
 
-   GHashTable* gh = g_hash_table_new_full(g_str_hash, g_str_equal, str_key_destroyer, NULL);
+   GHashTable* gh = g_hash_table_new_full(g_str_hash, g_str_equal, simple_key_destroyer, NULL);
    for(ulong i = 0; i < g->len; i++){
         for(ulong j = 0; j < fq_nmod_mpoly_length(*hp, ctx); j++){
             h = flint_calloc(1, sizeof(fq_nmod_mpoly_t));
@@ -497,6 +532,30 @@ int monom_divides(const Polynom a, const Polynom b, const PolynomRing ctx){
         if (expa[i] < expb[i]) return 0;
 
     return 1;
+}
+
+// https://stackoverflow.com/questions/20511347/a-good-hash-function-for-a-vector
+ulong monom_hash(const Polynom p, const PolynomRing ctx){
+    int nvars = fq_nmod_mpoly_ctx_nvars(ctx);
+
+    ulong* exp = malloc(sizeof(ulong)*nvars);
+    fq_nmod_mpoly_get_term_exp_ui(exp, p, 0, ctx);
+
+    ulong seed = 0;
+    int i;
+
+    // for(i = 0; i < nvars; ++i) 
+    //     if (exp[i] != 0) ++seed;
+
+    seed += nvars;
+
+    for(i = 0; i < nvars; i++)
+        seed ^= exp[i] + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+
+    free(exp);
+
+    return seed;
+    
 }
 
 void reduce_groebner_basis(GArray* G, const PolynomRing ctx){
