@@ -62,8 +62,8 @@ void head_monom_lst_from_poly_lst(GArray* res, const GArray* g, const PolynomRin
 void print_poly_lst(const GArray* lst, const PolynomRing ctx);
 void print_hash_table(const GHashTable* hash_table, const PolynomRing ctx);
 
-void* __calloc_poly_lst();
-void* __calloc_poly();
+void* __malloc_poly_lst();
+void* __malloc_poly();
 
 void reduce_groebner_basis(GArray* G, const PolynomRing ctx);
 void reduce_groebner_basis_relative(GArray* G, const GArray* F, const PolynomRing ctx);

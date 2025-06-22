@@ -264,7 +264,7 @@ void F4_select(GArray* Pd, GArray* P, const PolynomRing ctx){
     }
 }
 
-// preprocessing с массивами
+// preprocessing с массивами. Очень медленно
 void old_old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
     F4Pair f4p, *pf4p;
     Polynom new_poly, f;
@@ -274,19 +274,19 @@ void old_old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const Polynom
     GArray* sub;
     ulong i, j, k;
 //-------------------------------------------------------
-    done = __calloc_poly_lst();
-    sub = __calloc_poly_lst();
+    done = __malloc_poly_lst();
+    sub = __malloc_poly_lst();
     init_poly(m, ctx);
     init_poly(div, ctx);
 
     pf4p = (F4Pair*)Pd->data;
     for(i = 0; i < Pd->len; i++){
-        new_poly = __calloc_poly();
+        new_poly = __malloc_poly();
         init_poly(new_poly, ctx);
         fq_nmod_mpoly_mul(new_poly, pf4p[i].t_f, pf4p[i].f, ctx);
         g_array_append_val(F, new_poly);
 
-        new_poly = __calloc_poly();
+        new_poly = __malloc_poly();
         init_poly(new_poly, ctx);
         fq_nmod_mpoly_mul(new_poly, pf4p[i].t_g, pf4p[i].g, ctx);
         g_array_append_val(F, new_poly);
@@ -300,7 +300,7 @@ void old_old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const Polynom
         if (i % 2 == 0){
             HM(m, *hp, ctx);
             if (is_poly_in_lst(done, m, ctx) == 0){
-                f = __calloc_poly();
+                f = __malloc_poly();
                 init_poly(f, ctx);
                 set_poly(f, m, ctx);
                 g_array_append_val(done, f);
@@ -310,7 +310,7 @@ void old_old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const Polynom
         for(j = 1; j < fq_nmod_mpoly_length(*hp, ctx); j++){
             fq_nmod_mpoly_get_term_monomial(m, *hp, j, ctx);
             if (is_poly_in_lst(sub, m, ctx) == 0){
-                f = __calloc_poly();
+                f = __malloc_poly();
                 init_poly(f, ctx);
                 set_poly(f, m, ctx);
                 g_array_append_val(sub, f);
@@ -373,7 +373,7 @@ void old_old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const Polynom
                     printf("\n");
                 #endif
 
-                new_poly = __calloc_poly();
+                new_poly = __malloc_poly();
                 init_poly(new_poly, ctx);
                 fq_nmod_mpoly_mul(new_poly, div, *hp, ctx);
                 g_array_append_val(F, new_poly);
@@ -411,7 +411,7 @@ void old_old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const Polynom
     clear_poly(div, ctx);
 }
 
-// preprocessing с хеш-таблицами вместо массивов
+// preprocessing с хеш-таблицами вместо массивов. Все еще меделенно
 void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx){
     F4Pair f4p, *pf4p;
     Polynom new_poly, f;
@@ -433,12 +433,12 @@ void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing
     // Формирование множеств Left и Right
     pf4p = (F4Pair*)Pd->data;
     for(i = 0; i < Pd->len; i++){
-        new_poly = __calloc_poly();
+        new_poly = __malloc_poly();
         init_poly(new_poly, ctx);
         fq_nmod_mpoly_mul(new_poly, pf4p[i].t_f, pf4p[i].f, ctx);
         g_array_append_val(F, new_poly);
 
-        new_poly = __calloc_poly();
+        new_poly = __malloc_poly();
         init_poly(new_poly, ctx);
         fq_nmod_mpoly_mul(new_poly, pf4p[i].t_g, pf4p[i].g, ctx);
         g_array_append_val(F, new_poly);
@@ -458,7 +458,7 @@ void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing
         // Проверяем есть ли уже этот моном, если нет добовляем
         if (g_hash_table_lookup(done, str) == NULL){
             // printf("inserting ");
-            f = __calloc_poly();
+            f = __malloc_poly();
             init_poly(f, ctx);
             set_poly(f, m, ctx);
             // printf("str = %s\n", str);
@@ -476,7 +476,7 @@ void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing
             str = fq_nmod_mpoly_get_str_pretty(m, NULL, ctx);
 
             if (g_hash_table_lookup(sub, str) == NULL){
-                f = __calloc_poly();
+                f = __malloc_poly();
                 init_poly(f, ctx);
                 set_poly(f, m, ctx);
                 g_hash_table_insert(sub, str, f);
@@ -546,7 +546,7 @@ void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing
                 #endif
 
                 // Добавляем новый полином
-                new_poly = __calloc_poly();
+                new_poly = __malloc_poly();
                 init_poly(new_poly, ctx);
                 fq_nmod_mpoly_mul(new_poly, div, h, ctx);
                 g_array_append_val(F, new_poly);
@@ -564,7 +564,7 @@ void old_preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing
                     str = fq_nmod_mpoly_get_str_pretty(m, NULL, ctx);
 
                     if (g_hash_table_lookup(sub, str) == NULL){
-                        f = __calloc_poly();
+                        f = __malloc_poly();
                         init_poly(f, ctx);
                         set_poly(f, m, ctx);
                         g_hash_table_insert(sub, str, f);
@@ -617,12 +617,12 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
     // Формирование множеств Left и Right
     pf4p = (F4Pair*)Pd->data;
     for(i = 0; i < Pd->len; i++){
-        new_poly = __calloc_poly();
+        new_poly = __malloc_poly();
         init_poly(new_poly, ctx);
         fq_nmod_mpoly_mul(new_poly, pf4p[i].t_f, pf4p[i].f, ctx);
         g_array_append_val(F, new_poly);
 
-        new_poly = __calloc_poly();
+        new_poly = __malloc_poly();
         init_poly(new_poly, ctx);
         fq_nmod_mpoly_mul(new_poly, pf4p[i].t_g, pf4p[i].g, ctx);
         g_array_append_val(F, new_poly);
@@ -642,7 +642,7 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
         // Проверяем есть ли уже этот моном, если нет добовляем
         if (g_hash_table_lookup(done, &ulong_key) == NULL){
             // printf("inserting ");
-            f = __calloc_poly();
+            f = __malloc_poly();
             init_poly(f, ctx);
             set_poly(f, m, ctx);
 
@@ -662,7 +662,7 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
             ulong_key = monom_hash(m, ctx);
 
             if (g_hash_table_lookup(sub, &ulong_key) == NULL){
-                f = __calloc_poly();
+                f = __malloc_poly();
                 init_poly(f, ctx);
                 set_poly(f, m, ctx);
 
@@ -737,7 +737,7 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
                 #endif
 
                 // Добавляем новый полином
-                new_poly = __calloc_poly();
+                new_poly = __malloc_poly();
                 init_poly(new_poly, ctx);
                 fq_nmod_mpoly_mul(new_poly, div, h, ctx);
                 g_array_append_val(F, new_poly);
@@ -756,7 +756,7 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
                     ulong_key = monom_hash(m, ctx);
 
                     if (g_hash_table_lookup(sub, &ulong_key) == NULL){
-                        f = __calloc_poly();
+                        f = __malloc_poly();
                         init_poly(f, ctx);
                         set_poly(f, m, ctx);
 
@@ -792,7 +792,7 @@ void preprocessing(GArray* F, GArray* Pd, const GArray* G, const PolynomRing ctx
 }
 
 
-// LinBox reduce
+// LinBox reduce. Не работает
 void ref4(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
     GArray* F_monoms;
     Polynom f;
@@ -803,7 +803,7 @@ void ref4(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     ulong i, j, k;
     slong r, p_len, t;
 //-------------------------------------------------------
-    F_monoms = __calloc_poly_lst();
+    F_monoms = __malloc_poly_lst();
     monom_lst_from_poly_lst(F_monoms, F, ctx);
     init_poly(m, ctx);
     init_poly(sum, ctx);
@@ -854,7 +854,7 @@ void ref3(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     ulong i, j, k;
     slong r, p_len, t;
 //-------------------------------------------------------
-    F_monoms = __calloc_poly_lst();
+    F_monoms = __malloc_poly_lst();
     monom_lst_from_poly_lst(F_monoms, F, ctx);
     init_poly(m, ctx);
     init_poly(sum, ctx);
@@ -894,6 +894,7 @@ void ref3(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     clear_poly(g, ctx);
 }
 
+// Не работает
 void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ctx){
     GArray* F_monoms;
     Polynom f;
@@ -905,7 +906,7 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     slong* p;
     slong r, p_len, t;
 //-------------------------------------------------------
-    F_monoms = __calloc_poly_lst();
+    F_monoms = __malloc_poly_lst();
     monom_lst_from_poly_lst(F_monoms, F, ctx);
     init_poly(m, ctx);
     init_poly(sum, ctx);
@@ -964,7 +965,7 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
 
     //    // Получаем редуцированные полиномы
     // for(i = 0; i < r; i++){
-    //     f = __calloc_poly();
+    //     f = __malloc_poly();
     //     init_poly(f, ctx);
 
     //     for(j=i; j < F_monoms->len; j++){
@@ -1053,7 +1054,7 @@ void ref2(GArray* F_ref, const GArray* F, const Field field, const PolynomRing c
     
 
     for(i = 0; i < r; i++){
-        f = __calloc_poly();
+        f = __malloc_poly();
         init_poly(f, ctx);
         
         #if __DEBUG_F4
@@ -1110,7 +1111,7 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
     slong* p;
     slong r, p_len, t;
 //-------------------------------------------------------
-    F_monoms = __calloc_poly_lst();
+    F_monoms = __malloc_poly_lst();
     monom_lst_from_poly_lst(F_monoms, F, ctx);
     init_poly(m, ctx);
     init_poly(sum, ctx);
@@ -1204,7 +1205,7 @@ void ref(GArray* F_ref, const GArray* F, const Field field, const PolynomRing ct
 
     // Получаем редуцированные полиномы
     for(i = 0; i < r; i++){
-        f = __calloc_poly();
+        f = __malloc_poly();
         init_poly(f, ctx);
 
         for(j=i; j < F_monoms->len; j++){
@@ -1248,8 +1249,8 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
     ulong i, j;
     int flag;
 //-------------------------------------------------------
-    F = __calloc_poly_lst();
-    F_ref = __calloc_poly_lst();
+    F = __malloc_poly_lst();
+    F_ref = __malloc_poly_lst();
     init_poly(f, ctx);
     init_poly(g, ctx);
 //-------------------------------------------------------
@@ -1319,8 +1320,6 @@ void reduction(GArray* F_, GArray* Pd, const GArray* G, const Field field, const
     clear_poly(f, ctx);
     clear_poly(g, ctx);
 }
-
-
 
 // Критерий
 void F4_GMI(GArray* P, const GArray* G, const Polynom h, ulong t, const PolynomRing ctx){
@@ -1561,6 +1560,7 @@ void reduced_F4_GMI(GArray* P, GArray* G, GArray* F_, const PolynomRing ctx){
     }
 }
 
+
 #ifdef __cplusplus
 extern "C"
 #endif
@@ -1575,8 +1575,8 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     Polynom* hp;
     Basis temp;
 //-------------------------------------------------------
-    G = __calloc_poly_lst(); // g_array_new(FALSE, FALSE, sizeof(Polynom));
-    F_ = __calloc_poly_lst();
+    G = __malloc_poly_lst(); // g_array_new(FALSE, FALSE, sizeof(Polynom));
+    F_ = __malloc_poly_lst();
     P = g_array_new(FALSE, FALSE, sizeof(F4Pair));
     Pd = g_array_new(FALSE, FALSE, sizeof(F4Pair));
 
@@ -1594,24 +1594,28 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
     fq_nmod_ctx_order(mod, field);
     
     for(i = 0; i < npoly; i++){
-        g = __calloc_poly();
+        g = __malloc_poly();
         init_poly(g, ctx);
         // set_poly(g, F[i], ctx);
 
         // Нормируем многочлен g
         HC(c, F[i], ctx);
-        fq_nmod_get_fmpz(t, c, ctx);
-        fmpz_invmod(inv_t, t, mod);
-        fq_nmod_set_fmpz(c, inv_t, ctx);
+        if (fq_nmod_is_one(c, ctx) == 0){
 
-        // fmpz_print(mod);
-        // printf("\n");
-        // fmpz_print(t);
-        // printf(" inv: ");
-        // fmpz_print(inv_t);
-        // printf("\n");
+            fq_nmod_get_fmpz(t, c, ctx);
+            fmpz_invmod(inv_t, t, mod);
+            fq_nmod_set_fmpz(c, inv_t, ctx);
+    
+            // fmpz_print(mod);
+            // printf("\n");
+            // fmpz_print(t);
+            // printf(" inv: ");
+            // fmpz_print(inv_t);
+            // printf("\n");
+    
+            fq_nmod_mpoly_scalar_mul_n_fq(g, F[i], inv_t, ctx);
+        } else set_poly(g, F[i], ctx);
 
-        fq_nmod_mpoly_scalar_mul_n_fq(g, F[i], inv_t, ctx);
         g_array_append_val(G, g);
     }
 
@@ -1678,7 +1682,7 @@ F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx
         }
 
         g_array_free(F_, FALSE);
-        F_ = __calloc_poly_lst();
+        F_ = __malloc_poly_lst();
 
         // while(F_->len > 0){
         //     f = g_array_index(F_, Polynom, F_->len-1);

@@ -1,9 +1,0 @@
-*.out
-*.o
-main
-.vscode/
-f4_old.c
-f4_old_v2.c
-test.txt
-test.txt.*
-result.txt

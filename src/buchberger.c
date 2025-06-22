@@ -114,14 +114,14 @@ Buchberger_result buchberger(const Basis basis, ulong t, const PolynomRing ctx)
     fq_nmod_mpoly_t S_poly, mod;
     Basis Q;
 
-    G = __calloc_poly_lst();
+    G = __malloc_poly_lst();
     P = g_array_new(FALSE, FALSE, sizeof(Pair));
     fq_nmod_mpoly_init(S_poly, ctx);
     fq_nmod_mpoly_init(mod, ctx);
 
     for (i = 0; i < t; i++)
     {
-        p = __calloc_poly();
+        p = __malloc_poly();
         fq_nmod_mpoly_init(p, ctx);
         fq_nmod_mpoly_set(p, basis[i], ctx);
         g_array_append_val(G, p);
@@ -183,7 +183,7 @@ Buchberger_result buchberger(const Basis basis, ulong t, const PolynomRing ctx)
                     g_array_append_val(P, pair);
                 }
 
-                p = __calloc_poly();
+                p = __malloc_poly();
                 fq_nmod_mpoly_init(p, ctx);
                 fq_nmod_mpoly_set(p, mod, ctx);
                 g_array_append_val(G, p);
@@ -1052,6 +1052,7 @@ Buchberger_result buchberger_v2_1(const Basis basis, ulong t, const PolynomRing 
         }
     }
     //----------------------------------------------------
+    reduce_groebner_basis(F, ctx);
     Basis res = from_garray(F);
     ulong len = F->len;
     Buchberger_result resres = {res, len};

@@ -15,9 +15,10 @@ extern "C" {
     typedef struct F4Result F4Result;
 
     // Алгоритм F4
+    // FIXME: если вызывать многократно в цикле могут быть ошибки памяти
     F4Result F4(const Basis F, ulong npoly, const Field field, const PolynomRing ctx);
 
-    // Редуцирование матрицу к верхне треугольному виду
+    // Редуцирование матрицу к верхне приведенной форме
     void F4_poly_reduce(GArray* F_ref, const GArray* F, const GArray* F_monoms, const Field field, const PolynomRing);
     void F4_linbox_poly_reduce(GArray* F_ref, const GArray* F, const GArray* F_monoms, const Field field, const PolynomRing);
     void old_F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, const Field field, const PolynomRing ctx);

@@ -358,6 +358,7 @@ void print_mymap(GHashTable* map, PolynomRing ctx){
     g_ptr_array_free(vals, FALSE);
 }
 
+
 void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, const Field field, const PolynomRing ctx){
     sm_t *M;
     ulong i, j, k, l;
@@ -366,8 +367,8 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
     fq_nmod_t coeff;
     Polynom new_poly;
     fmpz_t f;
-    ulong* key;
-    MatrixElement* el;
+    ulong key, *keys;
+    MatrixElement *el, *els;
 
     // Отображение мономов полиномов на столбцы матрицы
     GHashTable* map;
@@ -385,7 +386,7 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
     fq_nmod_mpoly_init(sum, ctx);
     fq_nmod_init(coeff, field);
     fmpz_init(f);
-    map = g_hash_table_new_full(g_int64_hash, g_int64_equal, simple_key_destroyer, NULL);
+    map = g_hash_table_new_full(g_int64_hash, g_int64_equal, NULL, NULL);
 
     polynoms = (Basis)F->data;
     monoms = (Basis)F_monoms->data;
@@ -400,15 +401,17 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
         printf("\n");
     #endif
 
+    els = malloc(F_monoms->len*sizeof(MatrixElement));
+    keys = malloc(F_monoms->len*sizeof(ulong));
+
     for(i = 0; i < F_monoms->len; i++){
-        MatrixElement* me = calloc(1, sizeof(MatrixElement));
-        me->j=i;
-        me->p=monoms[i];
+        // MatrixElement* me = calloc(1, sizeof(MatrixElement));
+        els[i].j = i;
+        els[i].p = monoms[i];
 
-        key = malloc(sizeof(ulong));
-        *key = monom_hash(monoms[i], ctx);
+        keys[i] = monom_hash(monoms[i], ctx);
 
-        g_hash_table_insert(map, key, me);
+        g_hash_table_insert(map, &keys[i], &els[i]);
     }
 
     #if __DEBUG_F4_POLY_REDUCE
@@ -418,7 +421,6 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
     #endif
     //-------------------------------------------------------
 
-    key = malloc(sizeof(ulong));
     for (i = 0; i < F->len; i++)
     {
         l = fq_nmod_mpoly_length(polynoms[i], ctx);
@@ -432,23 +434,22 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
             fq_nmod_mpoly_get_term_monomial(m, polynoms[i], j, ctx);
             fq_nmod_mpoly_get_term_coeff_fq_nmod(coeff, polynoms[i], j, ctx);
 
-            *key = monom_hash(m, ctx);
+            key = monom_hash(m, ctx);
 
             #if __DEBUG_F4_POLY_REDUCE
                 printf("monom: %s\n", str);
             #endif
 
-            el = g_hash_table_lookup(map, key);
+            el = g_hash_table_lookup(map, &key);
             if (el == NULL) {
                 printf("Poly reduce mapping monoms to columns error.\n");
                 exit(-1);
             }
             fq_nmod_get_fmpz(f, coeff, field);
-            M->rows[i][j] = (int32_t)fmpz_get_ui(f);
+            M->rows[i][j] = fmpz_get_ui(f);
             M->pos[i][j] = el->j;
         }
     }
-    free(key);
 
     sort_schreyer_matrix(M);
     normalize_schreyer_input_rows(M);
@@ -511,10 +512,12 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
     fmpz_clear(f);
 
 
-    GPtrArray* vals = g_hash_table_get_values_as_ptr_array(map);
-    for(i = 0; i < vals->len; i++)
-        free((MatrixElement*)vals->pdata[i]);
+    // GPtrArray* vals = g_hash_table_get_values_as_ptr_array(map);
+    // for(i = 0; i < vals->len; i++)
+    //     free((MatrixElement*)vals->pdata[i]);
 
+    free(els);
+    free(keys);
     g_hash_table_destroy(map);
 
     free(M->rows);
@@ -525,7 +528,7 @@ void F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, cons
 
 }
 
-
+// Отображение мономов на столбцы через хештаблицу. Ключ - строковое представление монома. Все еще медленно
 void old_F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, const Field field, const PolynomRing ctx){
     sm_t *M;
     ulong i, j, k, l;
@@ -688,7 +691,7 @@ void old_F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, 
 
 }
 
-
+// Отображение мономов на столбцы через массивы. Очень медленно
 void old_old_F4_poly_reduce(GArray *F_ref, const GArray *F, const GArray *F_monoms, const Field field, const PolynomRing ctx)
 {
     sm_t *M;
