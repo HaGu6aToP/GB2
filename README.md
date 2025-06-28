@@ -1,4 +1,4 @@
-# GB2
+# GB
 
 This library implements the Buchberg algorithm, the improved Buchberger algorithm and F4 for ideals over finite fields $p < 2^{16}$. This code depends on FLINT, GLib and GBLA.
 
